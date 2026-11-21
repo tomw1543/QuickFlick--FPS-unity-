@@ -13,6 +13,7 @@ Unity 6 (URP, C#) stationary space shooter. Dual analog sticks over Arduino USB 
 - A no-hardware input (mouse tonight, keyboard later if needed) must always work, so every feature can be tested without the Arduino.
 - Use object pooling for projectiles, enemies and effects. Target 60+ FPS.
 - Check compile errors in `%LOCALAPPDATA%\Unity\Editor\Editor.log`.
+- **Commit after every working change.** The main session git-commits once a change is verified working in the editor (even a one-liner). Reason: we lost today's orange-planet baseline because nothing was committed and six Sonnet attempts drifted away from it. No batching commits across multiple changes.
 - Arduino: compile and upload with `arduino-cli` (commands land in `SPEC.md` when wired).
 - Never write API keys or secrets into any file in this repo.
 
@@ -38,6 +39,10 @@ Unity 6 (URP, C#) stationary space shooter. Dual analog sticks over Arduino USB 
 | **3: Heavy** | Project init, complete refactors, several features at once, anything touching serial or threading | Multiple Sonnet builders + Opus reviewer that must approve |
 
 State the tier and a one-line reason at the top of every reply, e.g. `TIER 2: HUD + waves + new enemy`.
+
+### Escalate to Opus on bug-fix miss (exception, ask first)
+
+Not a default. When a Sonnet builder fails to one-shot a bug fix (first attempt doesn't resolve it, or the bug recurs), **ask the human before escalating**. If they confirm, spawn `opus-reviewer` for root-cause analysis — read-only, no edits — then hand the diagnosis to a Sonnet builder for the fix. Never escalate without an explicit go-ahead.
 
 ### Tier 2 details
 

@@ -8,6 +8,7 @@ HUD, screens, post-fx builder.
 - `Hud` — 5 HP pips top-left, score top-right.
 - `WaveBanner` — centre screen, visible only between waves.
 - `DebugOverlay` — F3 toggles. Shows stick values, FPS, enemy count.
+- `OffScreenArrows` — for each active enemy outside the camera frustum, draws a chevron at the screen edge pointing at it. Updates each frame.
 - `PostFxBuilder` — populates the scene's Global Volume at runtime with Bloom + Vignette + Tonemapping.
 
 **Rule:** HUD is minimal (SPEC.md Q15 (b)). Add elements only when the user asks.

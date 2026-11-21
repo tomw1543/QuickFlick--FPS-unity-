@@ -1,114 +1,107 @@
-# TILT STRIKE — Handoff (grill-with-docs, paused mid-session)
+# HANDOFF — QuickFlick
 
-Read `PLAN.md` first for the full build spec. This file captures what has been
-**decided** in the grilling session and what is **still open** so a new Claude
-session can pick up without re-grilling.
+Hand-off from 2026-11-21 late-night session. Read this first tomorrow.
 
-Ponytail mode is active (lazy senior dev: smallest change that fully works).
+## State of play
 
----
+Game is **playable with mouse**. Phases 0–6 shipped: controllers, cannons, pooled projectiles, enemy waves, HP/score HUD, SFX, music, pause, off-screen arrows, reticle. MegaShot cone AOE in. Spawning is above-horizon only. Platform under the ship is a light-grey disc (runtime-built).
 
-## Scope for tonight (solo, keyboard+mouse, on tom's laptop)
+**Phase 7 is partially done.** Starfield + stars work. Sun and Planet are instantiated but render **pure white** no matter what. See the bug below — this is the blocker.
 
-- **Full phases 0–7** of `PLAN.md` playable tonight. Hardware (Arduino + sticks)
-  arrives tomorrow morning — the input layer is abstracted so the swap is
-  one-line in `GameBootstrap`.
-- Dropping `calibrate` screen for tonight (mouse doesn't need it). Bring it back
-  tomorrow for the stick version.
+## Triumphs tonight
 
-## Settled decisions
+- Full QuickFlick rename. Namespaces `QuickFlick.*`. Repo on GitHub: `tomw1543/QuickFlick--FPS-unity-`.
+- Doc set written: root `CLAUDE.md`, `SPEC.md`, `CONTEXT.md`, per-area `CLAUDE.md` in Bootstrap/Combat/Enemies/Systems/UI/Audio/Input.
+- Tier 2 workflow proven: parallel Sonnet builders completed Phases 1–6 without colliding.
+- Hybrid scene rule enforced: `Main.unity` holds only 5 bootstrap objects, `GameBootstrap` instantiates everything else.
+- Difficulty tuning: DroneSpeed 8 → 2, projectile hit-collider 2.5×, arrow size scales with distance (bigger = closer).
+- MegaShot pivoted from projectile-multiplier to short-range cone AOE (iterates `FindObjectsByType<Enemy>` in `MegaShotDetector`).
+- `DontDestroyOnLoad` wired on HUD, Sfx, PostFx so scene reload keeps them alive.
+- **Blender pipeline for .glb → .fbx works end-to-end.** 20 Quaternius/Poly models converted. Script at `scripts/glb_to_fbx.py`. Run with `"C:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python scripts/glb_to_fbx.py`.
+- FBX `AssetPostprocessor` (`Assets/Editor/FbxMaterialToUrpPostprocessor.cs`) swaps Standard → URP Lit on import for everything under `Resources/SkyBox/Converted/`.
+- Runtime safety net `FixImportedMaterials` in `GameBootstrap` clones each imported material, forces URP Lit, copies colour from `_BaseColor`/`_Color`, applies orange fallback for near-black or Unity-default-grey.
+- Verified by logs: planet material at runtime shows `shader=Universal Render Pipeline/Lit color=RGBA(0.800, 0.370, 0.070)` — orange is actually assigned.
 
-| # | Topic | Decision |
-|---|---|---|
-| Q1 | Acceptance bar tonight | Full phases 0–7 (polish included), cut-list in Q9 if time runs out |
-| Q2 | Fire bindings model | Keep the two-cannon `IControllerInput` interface; don't try to simulate dual sticks on mouse |
-| Q3 | Input device tonight | **Mouse replaces WASD** (position = virtual tilt), closer mapping to sticks |
-| Q4 | Code-first rule | **Dropped** — build in the Unity editor like a normal project (solo, no merge-conflict risk) |
-| Q5 | EditMode unit tests | **Skip tonight**. Add `ControllerProtocolTests.cs` tomorrow before wiring serial |
-| Q6 | Mouse look mapping | **Rate control via mouse position** (offset from screen centre = virtual tilt angle). Cursor locked + hidden. Same `StickCombiner` code path as the Arduino tomorrow — one-line swap |
-| Q7 | Fire buttons | LMB = left cannon, RMB = right cannon. Both within 0.15 s = **MEGA SHOT** (3× damage, renamed DOUBLE SHOT from plan) |
-| Q8 | Unity project setup | Tom clicks through Unity Hub create; Claude writes scripts into the created project |
-| Q9 | Juice cut order (if time runs out) | nebulae → planet → music loop → asteroids → slow-mo → combo multiplier → title screen → Brute return-fire → off-screen arrows → SFX → everything else stays. **Off-screen arrows stay high** — only hint of enemies behind you when look-speed is slow |
-| Q10 | Audio source | Kenney CC0 pack — superseded by user-dropped music files (see below) |
-| Q11 | Time mechanic | **Normal time** (SUPERHOT reference is visual + control-style only, NOT the time gimmick). Can refactor later if time |
-| Q12 | Palette / aesthetic | Original plan palette: cyan lasers, magenta enemies, deep navy space, nebulae/planet/asteroids as juice tier. SUPERHOT reference = low-poly flat-shaded geometry + FPS-style controls, nothing about color |
-| Q13 | Enemies tonight | **One type only**: Drone (angular red shard, flies straight, 1 HP). `Enemy` must be an abstract base class / interface so Weaver + Brute slot in as subclasses later. Extensible is non-negotiable |
+## Fails tonight
 
-### Mouse-into-input-interface resolution (decided by inference, not grilled)
+- **GLTFast is broken on Unity 6000.0.27f1.** Versions 6.0.0 and 6.21.0 both fail to compile (`ReadOnlySpan<byte>` API not present). Package removed; `.glb` loading dropped in favour of the Blender → FBX pipeline.
+- **Nebulae abandoned.** Procedural, NASA image, additive particle — all rendered as grey balls. NebulaBuilder is a no-op now. User said "skip nebulas all together".
+- **Sun and Planet still render white.** This is the current open bug. Materials are logged as correct (orange `_BaseColor` on URP Lit for Planet, warm-white texture on Unlit/Texture for Sun), but both appear white in play. Attempts that did NOT fix it:
+  - Swapping URP Lit → Unlit/Texture on the Sun
+  - Setting `_MainTex` and `_BaseMap` with a solid-colour 2×2 texture
+  - Running an `AssetPostprocessor` over every FBX to convert Standard → URP Lit
+  - Runtime `FixImportedMaterials` cloning materials and forcing URP Lit with explicit colours
+  - Treating Unity's default 0.8/0.8/0.8 grey as "no colour set" and applying the orange fallback
+  - Lowering bloom from threshold 0.9 / intensity 1.2 → threshold 1.5 / intensity 0.6
+  - Switching tonemapping ACES → Neutral
 
-`MouseInput` writes MouseX-offset into both `LeftRoll` and `RightRoll`, same
-MouseY into both `LeftPitch` and `RightPitch`. `StickCombiner` sees "both sticks
-moving together" and naturally gives the 100%-speed curve. No changes to the
-shared maths when the Arduino swaps in tomorrow.
+  All changes compiled and ran. Logs show the materials are correct every time. Render is still white.
 
-## Audio files (dropped at repo root)
+## Current theory — where to look tomorrow
 
-```
-331music-video-game-music-598332.mp3
-musicwallah-no-copyright-gaming-80s-sci-fi-vibe-with-analog-synths-472678.mp3
-psychronic-let-the-games-begin-21858.mp3
-serhii_kliets-spaceship-arcade-shooter-game-background-soundtrack-318508.mp3
-```
+Material is orange, render is white. The material isn't the issue. Something between material and pixel is overriding. Candidates in order of likelihood:
 
-**Default pick:** `serhii_kliets-spaceship-arcade-shooter-...mp3` (best name-match).
-Move all four into `unity/TiltStrike/Assets/Audio/` once the Unity project exists.
-Swapping tracks is a one-line config change.
+1. **Directional light still blowing it out.** Intensity 1.3, white, aimed at the planet. Even with Neutral tonemap, orange × bright white directional = near-white. Try `light.intensity = 0.6f` in `GameBootstrap.BuildSun`.
+2. **HDR camera + no exposure clamp.** Main Camera likely has HDR on from URP defaults. Without an Exposure override in the PostFx profile, bright surfaces saturate. Add `profile.Add<ColorAdjustments>(true)` with `postExposure.Override(-1.5f)` and see what happens.
+3. **The planet FBX ships with a transparent surface type.** Scene lighting + transparent = white sky bleed. Check `material.GetFloat("_Surface")` in the `FixImportedMaterials` log — should be 0 (Opaque). Force it: `m.SetFloat("_Surface", 0); m.SetOverrideTag("RenderType", "Opaque"); m.renderQueue = 2000;`
+4. **`Lighting Data Asset is incompatible`** warning in the log is NOT harmless — URP may be sampling broken baked lightmaps. Open Window → Rendering → Lighting → Delete the Lighting Data Asset in the scene inspector, or click "Clear Baked Data". Sun/Planet may start to render with their actual surface shading.
+5. **Nuclear option: disable PostFxBuilder entirely for one play test.** Comment out its `[RuntimeInitializeOnLoadMethod]` attribute. If sun/planet render correctly with NO post-fx, the culprit is 100% in the volume profile. If they still render white, it's lighting or the shader itself.
 
-## Open questions (frontier when session paused)
+Try these in order, one per play run. Logs already print material shader + colour, so you only need to confirm pixel colour visually.
 
-### Q14 — Main.unity GameObject list (confirm the list before coding)
+## Plan — tomorrow
 
-Proposed scene contents:
-- Main Camera (origin, rotation 0,0,0)
-- Directional Light (default URP new-scene light)
-- Global Volume (`PostFxBuilder` fills Bloom + Vignette + Tonemapping at runtime)
-- Bootstrap (empty GameObject with `GameBootstrap.cs` — spawns everything else)
-- EventSystem (auto-created on first UI element)
+### Morning (fix + finish Phase 7)
+1. Work the sun/planet fix list above. Budget 30 min. If still broken after step 5, kill Sun and Planet entirely for the demo — just the starfield + platform is fine.
+2. Phase 7 remaining scope (per `SPEC.md`):
+   - Asteroid enemy, big → splits into 2 smalls on death, smalls die in one shot
+   - Crab enemy (3 HP)
+   - Octopus enemy (6 HP)
+   - Space Drone enemy with blockable balls
+   - Wave composition rewrite per the Phase 7 table
+   - Title screen (one button: PLAY)
+3. Load the converted FBX models into the enemies: use `Resources.Load<GameObject>("SkyBox/Converted/<name>")` and the same `FixImportedMaterials` helper. Model mapping:
+   - Asteroid → `Asteroid by Poly by Google - enaIlQWET9a`
+   - Crab → (Quaternius enemy — pick from `Enemy Large by Quaternius - UgBmRVnQ9h` or `Robot Enemy by Quaternius - 1gNo5ezvmr`)
+   - Octopus → `Alien by Quaternius - sUTLXji0aL`
+   - Space Drone → `Satellite by Poly by Google - fmYHY1leH_P`
 
-Recommended: **confirm as-is**.
+### Afternoon (Arduino)
+1. Serial protocol: `SerialInput` reads ASCII `LX,LY,LB,RX,RY,RB\n` at 115200 on a background thread. Parse floats with `CultureInfo.InvariantCulture`.
+2. `ControllerProtocolTests.cs` — required per `CLAUDE.md`. Parse one line, parse garbage, parse half-line + newline across two reads. EditMode asmdef.
+3. Firmware: Arduino sketch reads two analog sticks + two buttons, prints the same format, 100 Hz.
+4. Upload with `arduino-cli` (command goes in `SPEC.md` once wired).
+5. Close `SerialPort` on `OnApplicationQuit` AND on domain reload (editor).
 
-### Q15 — HUD density
+### Model rule (tomorrow is Tier 3 territory)
+- Serial + threading = Tier 3. Spawn Sonnet builders for firmware + C# serial + tests in parallel. Opus reviewer must PASS before the human tests.
+- Every builder prompt: "Load and follow the `ponytail:ponytail` skill."
 
-- (a) Full plan HUD (reticle, HP pips, score, combo, wave, cannon cooldowns, controller status, F3 debug)
-- (b) **Minimal**: reticle, 5 HP pips top-left, score top-right, wave banner only during wave break, F3 debug overlay (toggle)
-- (c) Superhot-style: reticle only in gameplay; stats on death only
+## Known noise in the editor log (ignore)
 
-Recommended: **(b)**.
+- `Identifier uniqueness violation: Name:barrel/gate/Group, Type:Mesh` — Blender FBX export has duplicate mesh names across the Poly pack. Harmless, Unity still imports.
+- `Lighting data asset 'LightingData' is incompatible` — stale baked lightmap. Delete the asset from the scene inspector (see candidate 4 above). This one is possibly NOT harmless, revisit tomorrow.
 
-### Q16 — Reticle style
+## File map (where everything lives)
 
-Dot / thin cross / **circle-with-dot** (circle doubles as hit-highlight, turns red on enemy raycast).
+- `QuickFlick/Assets/Scripts/Bootstrap/GameBootstrap.cs` — single entry point; builds platform, sun, planet, calls `FixImportedMaterials`
+- `QuickFlick/Assets/Scripts/Editor/` — nothing yet; postprocessor lives under `Assets/Editor/` (Unity's special folder)
+- `QuickFlick/Assets/Editor/FbxMaterialToUrpPostprocessor.cs` — FBX import material conversion
+- `QuickFlick/Assets/Resources/SkyBox/*.glb` — source models (do not delete)
+- `QuickFlick/Assets/Resources/SkyBox/Converted/*.fbx` — Blender-exported, Unity-ready models
+- `scripts/glb_to_fbx.py` — Blender conversion script
+- `QuickFlick/Assets/Scripts/UI/PostFxBuilder.cs` — bloom/vignette/tonemap volume
+- `QuickFlick/Assets/Resources/Audio/Music/*.ogg` — music loop
+- `QuickFlick/Assets/Resources/Audio/Sfx/*.ogg` — shot/hit/mega/wave sfx
 
-Recommended: **circle-with-dot**.
+## Repo state
 
-### Unity setup progress
+- Branch: whatever's current (not committed tonight)
+- GitHub remote: `https://github.com/tomw1543/QuickFlick--FPS-unity-.git`
+- Nothing pushed since the rename. Morning task: commit the Blender pipeline + postprocessor + runtime material fix as one feature commit before the Phase 7 enemies land.
 
-Tom was mid-way through Unity Hub create steps (see "Unity Hub setup" in the
-conversation / phase 0 of `PLAN.md`). When resuming:
+## Quick test on wake
 
-1. Verify `unity/TiltStrike/` exists and opens in Unity 6000.0.27f1.
-2. Verify **Input System** is installed and input handling is **Both**.
-3. Verify Api Compatibility Level is **.NET Framework** (or `.NET Standard 2.1`
-   if Unity 6 renamed the option — we'll fix on the day we wire serial).
-4. Verify `Assets/Scenes/Main.unity` exists and is in Build Settings.
-
-## Next action when resuming
-
-1. Ask Tom to answer Q14/Q15/Q16 (or re-confirm the recommendations above).
-2. Confirm Unity project opens cleanly.
-3. Move audio files into `Assets/Audio/`.
-4. Start Phase 0 scaffolding: `.gitignore` (Unity template + .env + build/),
-   `README.md`, `CLAUDE.md`, folder stubs under `unity/TiltStrike/Assets/Scripts/`
-   following the layout in `PLAN.md` §3.
-5. Then straight to Phase 2 (input + camera): `IControllerInput`,
-   `MouseInput` (NOT keyboard — Q6 decided mouse), `StickCombiner`, `TurretCamera`,
-   wire into `GameBootstrap`. Playable look-around on launch.
-
-## Known risks to flag at resume
-
-- Unity Hub create may hit a sign-in / licence wall. Do this first.
-- If `.NET Framework` compat level isn't in the dropdown exactly as named, pick
-  the closest Framework-compatible one. Fix on the day we wire `System.IO.Ports`.
-- Mp3 loop seams can click. If audible, convert one track to .ogg tomorrow.
-- SUPERHOT inspiration is **visual and control-style only** — do NOT implement
-  time-scaling-with-rotation unless the user explicitly asks again.
+1. Open Unity. Let it compile. Press Play.
+2. Expected: mouse-look fires cannons, drones spawn above horizon, you shoot them, HP bar + score update, waves escalate, music plays.
+3. Actual bug: planet + sun are white. Attack the fix list above, step by step.

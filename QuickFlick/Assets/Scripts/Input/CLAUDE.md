@@ -4,7 +4,7 @@ Namespace: `QuickFlick.Input`
 
 Device abstraction for all player input. Gameplay code never talks to `UnityEngine.Input`, Input System actions, or `SerialPort` directly — only to `IControllerInput`.
 
-**Interface:** `IControllerInput { float2 LeftStick; float2 RightStick; bool LeftFire; bool RightFire; }`
+**Interface:** `IControllerInput { Vector2 LeftStick; Vector2 RightStick; bool LeftFire; bool RightFire; }`
 
 Tonight: `MouseInput` writes virtual-tilt offsets into both sticks (so `StickCombiner` sees them moving together → 100% speed). Tomorrow: `SerialInput` reads raw stick values on a background thread.
 
