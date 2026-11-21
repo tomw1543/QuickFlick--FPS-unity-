@@ -1,6 +1,6 @@
 # CLAUDE.md — QuickFlick
 
-Unity 6 (URP, C#) stationary space shooter. Dual analog sticks over Arduino USB serial (tomorrow); mouse tonight. Read `SPEC.md` for scope, phases and acceptance. Read `CONTEXT.md` for the glossary.
+Unity 6 (URP, C#) stationary space shooter. Dual analog sticks over Arduino USB serial (tomorrow); mouse tonight. Read `SPEC.md` for scope, phases and acceptance. Read `CONTEXT.md` for the glossary. Read `FBX-IMPORT.md` before loading any Poly/Quaternius model (asteroid, crab, octopus, drone, planet).
 
 ## Rules
 
