@@ -6,17 +6,21 @@ namespace QuickFlick.Enemies
     public class Octopus : Enemy
     {
         // Spec: 6 HP, 2 dmg, speed 1.2 u/s = 1.0 tangential + 0.6 radial inward, collider 1.3
-        const float TangentialSpeed = 1.0f;
-        const float RadialSpeed = 0.6f;
+        const float TangentialSpeed = 6.0f;
+        const float RadialSpeed = 2.0f; // r=25 / 2.0 ≈ 12s to reach player
         const int Damage = 2;
         const int MaxHp = 6;
-        const float Scale = 1.8f;
-        const float ColliderRadius = 1.3f;
-        const float ReachDistance = 1.5f;
+        const float Scale = 0.7f;
+        const float ColliderRadius = 2.2f; // laser clips were landing mid-model; oversize vs. visual on purpose
+        const float ReachDistance = 2.2f;
         const string ModelPath = "SkyBox/Converted/Spaceship_BarbaraTheBee";
         static readonly Color[] OctopusPalette = {
             new Color(0.95f, 0.85f, 0.40f), // yellow
             new Color(0.55f, 0.25f, 0.70f), // purple
+            new Color(0.95f, 0.65f, 0.20f), // amber
+            new Color(0.35f, 0.15f, 0.55f), // deep violet
+            new Color(1.00f, 0.95f, 0.65f), // pale yellow
+            new Color(0.75f, 0.45f, 0.85f), // lilac
         };
 
         Transform player;
@@ -49,7 +53,7 @@ namespace QuickFlick.Enemies
             if (r > ReachDistance)
             {
                 var n = to / r;
-                transform.position += -n * (RadialSpeed * dt) + Vector3.Cross(Vector3.up, n) * (TangentialSpeed * dt);
+                transform.position += n * (RadialSpeed * dt) + Vector3.Cross(Vector3.up, n) * (TangentialSpeed * dt);
             }
 
             var look = player.position - transform.position;
