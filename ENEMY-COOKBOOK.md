@@ -150,6 +150,7 @@ Don't touch `Spawner.cs` to put your enemy into the wave rotation. The wave-tabl
 - **F2** → Octopus
 - **F3** → SpaceDrone
 - **F4** → Asteroid (big)
+- **F5** → Mario
 - **P** → pause / resume the auto wave spawner
 
 Each press spawns one enemy at a random point on the 30u ring. If your class doesn't exist yet (`Type.GetType` returns null), the Console logs `[DebugSpawn] Crab not implemented yet` — you'll see that until you drop your file in.
@@ -190,6 +191,10 @@ Space Drone fires a projectile that player bullets can intercept. For now:
    - Has `1 HP` — a player projectile should destroy it on hit.
 2. Keep this inside your enemy's file for now; don't touch `Projectile.cs` (that's the player's projectile).
 3. If this feels like it needs a shared `EnemyProjectile` class, flag it — the infra should probably add one.
+
+### Level-approach walkers (`LevelApproachEnemy`)
+
+Subclass `LevelApproachEnemy` instead of `Enemy` for a ground-style walker: it re-projects the spawn to camera height on the spawn ring, moves only horizontally, faces the player with yaw only (no spin/pitch/roll), rolls a random speed in [MinSpeed, MaxSpeed] per spawn, and forces a solid colour on the model. You only override constants (HP, damage, speeds, collider, model path/scale/yaw offset, colour). See `Mario.cs`. Tune `ModelYawOffset` (0/180) if the model walks backwards, and `ModelTiltX` if the FBX imports lying down.
 
 ### On-death VFX
 

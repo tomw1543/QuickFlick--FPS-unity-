@@ -3,7 +3,7 @@ using QuickFlick.Enemies;
 
 namespace QuickFlick.Systems
 {
-    // F1..F4 force-spawn one enemy of each type at a random point on the spawn ring.
+    // F1..F5 force-spawn one enemy of each type at a random point on the spawn ring.
     // Logs a note if a type isn't implemented yet, so teammates can test their own class
     // without touching Spawner.cs or WaveManager.cs.
     public class DebugSpawner : MonoBehaviour
@@ -27,6 +27,7 @@ namespace QuickFlick.Systems
             if (UnityEngine.Input.GetKeyDown(KeyCode.F2)) TrySpawn("Octopus");
             if (UnityEngine.Input.GetKeyDown(KeyCode.F3)) TrySpawn("SpaceDrone");
             if (UnityEngine.Input.GetKeyDown(KeyCode.F4)) TrySpawn("Asteroid");
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F5)) TrySpawn("Mario");
             if (UnityEngine.Input.GetKeyDown(KeyCode.P))
             {
                 WavesPaused = !WavesPaused;
