@@ -42,6 +42,8 @@ namespace QuickFlick.Systems
                 Debug.Log($"Wave {i + 1} START ({def.Count} drones, 1 per {def.SpawnInterval:0.00}s)");
                 GameEvents.RaiseWaveStart(i + 1);
                 spawner.SetRate(def.SpawnInterval);
+                // Hold here while debug pause is on so teammates can test F1-F4 enemies in isolation.
+                while (DebugSpawner.WavesPaused) yield return null;
                 spawner.SpawnBatch(def.Count);
                 // Wait until the spawner finished AND the pool has no live enemies.
                 yield return new WaitForSeconds(def.Count * def.SpawnInterval);

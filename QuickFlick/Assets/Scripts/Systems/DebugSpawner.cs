@@ -8,10 +8,17 @@ namespace QuickFlick.Systems
     // without touching Spawner.cs or WaveManager.cs.
     public class DebugSpawner : MonoBehaviour
     {
+        public static bool WavesPaused;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Install()
         {
             if (FindFirstObjectByType<DebugSpawner>() == null) new GameObject("DebugSpawner").AddComponent<DebugSpawner>();
+        }
+
+        void Awake()
+        {
+            DontDestroyOnLoad(gameObject); // keeps the debug spawner out of GameBootstrap's scene cleanup
         }
 
         void Update()
@@ -20,6 +27,11 @@ namespace QuickFlick.Systems
             if (UnityEngine.Input.GetKeyDown(KeyCode.F2)) TrySpawn("Octopus");
             if (UnityEngine.Input.GetKeyDown(KeyCode.F3)) TrySpawn("SpaceDrone");
             if (UnityEngine.Input.GetKeyDown(KeyCode.F4)) TrySpawn("Asteroid");
+            if (UnityEngine.Input.GetKeyDown(KeyCode.P))
+            {
+                WavesPaused = !WavesPaused;
+                Debug.Log($"[DebugSpawn] Waves {(WavesPaused ? "PAUSED" : "RESUMED")}");
+            }
         }
 
         static void TrySpawn(string typeName)

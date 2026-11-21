@@ -150,8 +150,13 @@ Don't touch `Spawner.cs` to put your enemy into the wave rotation. The wave-tabl
 - **F2** → Octopus
 - **F3** → SpaceDrone
 - **F4** → Asteroid (big)
+- **P** → pause / resume the auto wave spawner
 
 Each press spawns one enemy at a random point on the 30u ring. If your class doesn't exist yet (`Type.GetType` returns null), the Console logs `[DebugSpawn] Crab not implemented yet` — you'll see that until you drop your file in.
+
+**Press P first, before F1-F4, to stop the wave system spawning asteroids over your test.** Pause kicks in at the next wave boundary, so any mid-wave asteroids finish arriving first. Press P again to resume waves.
+
+**Click inside the Game view** before pressing keys — Unity only captures keyboard input in the focused panel.
 
 ---
 
