@@ -15,6 +15,8 @@ namespace QuickFlick.Enemies
         readonly Dictionary<Type, Queue<Enemy>> free = new();
         readonly HashSet<Enemy> active = new();
 
+        public int ActiveCount => active.Count;
+
         void Awake() => Instance = this;
 
         public T Get<T>() where T : Enemy

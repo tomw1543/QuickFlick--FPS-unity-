@@ -11,7 +11,21 @@ namespace QuickFlick.Enemies
         public abstract void Tick(float dt);
         public abstract void Reset(Vector3 position);
 
-        void Update() => Tick(Time.deltaTime);
+        static UnityEngine.Camera cachedCam;
+
+        void Update()
+        {
+            Tick(Time.deltaTime);
+            if (cachedCam == null) cachedCam = UnityEngine.Camera.main;
+            if (cachedCam != null && Vector3.Distance(transform.position, cachedCam.transform.position) > QuickFlick.Systems.Settings.EnemyDespawnDistance)
+                Despawn();
+        }
+
+        // Pool return without death event or side effects (e.g. no asteroid split). Override only if cleanup differs.
+        protected virtual void Despawn()
+        {
+            EnemyPool.Instance.Return(this);
+        }
 
         public bool TakeDamage(float amount)
         {

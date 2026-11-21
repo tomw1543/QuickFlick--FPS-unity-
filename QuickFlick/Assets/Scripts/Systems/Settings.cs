@@ -19,6 +19,7 @@ namespace QuickFlick.Systems
         public const int WaveClearBonusPerWave = 500;
 
         public const float SpawnRingRadius = 30f;
+        public const float EnemyDespawnDistance = 80f; // kill enemies that drift past the player
         public const float PitchClampDegrees = 70f;
         public const float MouseSensitivity = 0.03f;
         public const float StickDeadzone = 0.15f;
@@ -32,6 +33,8 @@ namespace QuickFlick.Systems
         }
 
         // Wave 4+: reuse the last entry, scaling Count up and SpawnInterval down (WaveManager's job).
-        public static readonly WaveDef[] Waves = { new(5, 1.5f), new(8, 1.2f), new(12, 1.0f) };
+        // Flat 3-big per wave while asteroid is the only enemy; splits add another ~6 smalls.
+        // Revert to the SPEC Phase 7h table when the other enemy types ship.
+        public static readonly WaveDef[] Waves = { new(3, 3.0f), new(3, 2.6f), new(3, 2.2f) };
     }
 }

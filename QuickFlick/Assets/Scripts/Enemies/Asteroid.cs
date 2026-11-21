@@ -8,10 +8,10 @@ namespace QuickFlick.Enemies
         const float Speed = 2f;
         const int Damage = 1;
         const float BigScale = 1.5f;
-        const float SmallScale = 0.7f;
+        const float SmallScale = 0.45f;
         const float SplitAngle = 20f;
         const float ReachDistance = 1.5f;
-        const string ModelPath = "SkyBox/Converted/Asteroid by Poly by Google - enaIlQWET9a";
+        const string ModelPath = "SkyBox/Converted/Asteroid by J-Toastie - YS1jpm3mNr";
         static readonly Color RockColor = new Color(0.45f, 0.42f, 0.38f);
 
         public bool IsBig = true;
@@ -29,6 +29,8 @@ namespace QuickFlick.Enemies
             player = UnityEngine.Camera.main.transform;
             transform.position = position;
             transform.localScale = Vector3.one * (big ? BigScale : SmallScale);
+            var sc = GetComponent<SphereCollider>();
+            if (sc != null) sc.radius = big ? 1.5f : 1.0f; // local-space; multiplied by transform scale at runtime
             dir = direction ?? (player.position - position).normalized;
             AttachVisual();
             gameObject.SetActive(true);
@@ -48,6 +50,7 @@ namespace QuickFlick.Enemies
 
         protected override void Die()
         {
+            Debug.Log($"[Asteroid] Die hp={hp} isBig={IsBig} willSplit={IsBig}");
             if (IsBig)
             {
                 // Spawn before base.Die so this instance is still active and the pool hands out fresh ones.

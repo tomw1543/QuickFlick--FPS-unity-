@@ -9,17 +9,14 @@ namespace QuickFlick.Systems
         const float DelaySeconds = 5f; // pre-wave delay, doubles as the between-wave banner
 
         Spawner spawner;
-        int remaining;
 
         void OnEnable()
         {
-            GameEvents.EnemyDied += OnEnemyDied;
             GameEvents.Restart += OnRestart;
         }
 
         void OnDisable()
         {
-            GameEvents.EnemyDied -= OnEnemyDied;
             GameEvents.Restart -= OnRestart;
         }
 
@@ -29,13 +26,9 @@ namespace QuickFlick.Systems
             StartCoroutine(Run());
         }
 
-        // Counts every death (kill or reached player); remaining includes not-yet-spawned drones.
-        void OnEnemyDied(Enemy e) { if (remaining > 0) remaining--; }
-
         void OnRestart()
         {
             StopAllCoroutines();
-            remaining = 0;
             spawner.SpawnBatch(0);
             StartCoroutine(Run());
         }
@@ -46,12 +39,13 @@ namespace QuickFlick.Systems
             {
                 yield return new WaitForSeconds(DelaySeconds);
                 var def = Def(i);
-                remaining = def.Count;
                 Debug.Log($"Wave {i + 1} START ({def.Count} drones, 1 per {def.SpawnInterval:0.00}s)");
                 GameEvents.RaiseWaveStart(i + 1);
                 spawner.SetRate(def.SpawnInterval);
                 spawner.SpawnBatch(def.Count);
-                yield return new WaitUntil(() => remaining <= 0);
+                // Wait until the spawner finished AND the pool has no live enemies.
+                yield return new WaitForSeconds(def.Count * def.SpawnInterval);
+                yield return new WaitUntil(() => QuickFlick.Enemies.EnemyPool.Instance != null && QuickFlick.Enemies.EnemyPool.Instance.ActiveCount == 0);
                 Debug.Log($"Wave {i + 1} CLEAR + bonus {Settings.WaveClearBonusPerWave * (i + 1)}");
                 GameEvents.RaiseWaveClear(i + 1);
             }
