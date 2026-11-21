@@ -26,7 +26,8 @@ namespace QuickFlick.Systems
             float yaw = Random.Range(0f, 360f);
             float pitch = Random.Range(5f, 60f);
             Vector3 dir = Quaternion.Euler(-pitch, yaw, 0f) * Vector3.forward;
-            EnemyPool.Instance.Get<Drone>().Reset(playerPos + dir * Settings.SpawnRingRadius);
+            // shortcut: Asteroid test spawn, revert when Phase 7h wave table lands
+            EnemyPool.Instance.Get<Asteroid>().Reset(playerPos + dir * Settings.SpawnRingRadius);
         }
     }
 }

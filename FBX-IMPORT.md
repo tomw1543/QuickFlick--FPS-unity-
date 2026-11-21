@@ -18,7 +18,7 @@ Any of these causes the "shader is right in the log, pixel is still white" ghost
 Defined in `QuickFlick/Assets/Scripts/Bootstrap/GameBootstrap.cs`. Static, callable from anywhere. Clones every material on the imported hierarchy to a fresh URP Lit with a known colour.
 
 ```csharp
-static void FixImportedMaterials(GameObject root, Color fallback)
+internal static void FixImportedMaterials(GameObject root, Color fallback)
 {
     var urpLit = Shader.Find("Universal Render Pipeline/Lit");
     if (urpLit == null) { Debug.LogWarning("FixImportedMaterials: URP Lit shader not found"); return; }

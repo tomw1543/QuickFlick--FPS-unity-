@@ -141,7 +141,7 @@ namespace QuickFlick.Bootstrap
 
         // FBX-imported materials often ship with Standard shader or stale keywords; URP then renders them white.
         // Clone each material, force URP Lit, copy the colour from whichever property the old shader used.
-        static void FixImportedMaterials(GameObject root, Color fallback)
+        internal static void FixImportedMaterials(GameObject root, Color fallback)
         {
             var urpLit = Shader.Find("Universal Render Pipeline/Lit");
             if (urpLit == null) { Debug.LogWarning("FixImportedMaterials: URP Lit shader not found"); return; }
