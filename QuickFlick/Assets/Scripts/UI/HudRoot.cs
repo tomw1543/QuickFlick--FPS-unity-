@@ -36,7 +36,10 @@ namespace QuickFlick.UI
             Instance = this;
             DontDestroyOnLoad(gameObject); // keeps the HUD out of GameBootstrap's scene cleanup
             var canvas = gameObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = UnityEngine.Camera.main;
+            canvas.planeDistance = 1f;
+            canvas.sortingOrder = 100;
             var scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
@@ -78,7 +81,9 @@ namespace QuickFlick.UI
             rt.anchorMin = rt.anchorMax = rt.pivot = anchor;
             rt.anchoredPosition = pos; rt.sizeDelta = size;
             var t = go.AddComponent<Text>();
-            t.font = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var fontToUse = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            if (fontToUse == null) Debug.LogError("[Hud] NewText: no builtin font found");
+            t.font = fontToUse;
             t.fontSize = fontSize; t.alignment = align; t.color = Color.white; t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Overflow; t.verticalOverflow = VerticalWrapMode.Overflow;
             return t;
