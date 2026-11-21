@@ -52,7 +52,12 @@ device ──raw readings──▶ background thread ──latest value──▶
 
 ### Aiming: velocity control
 
-Aim is **rate-based**, like a joystick. Tilt or point the device a few degrees left of neutral and the camera keeps turning left until you return to neutral. A bigger angle turns faster, up to a cap. A small deadzone around neutral stops drift.
+Aim is **rate-based**, like a joystick, on **both axes**:
+
+- **Left / right:** point the device a few degrees (e.g. 3°) left of neutral and the camera keeps turning left until you return to neutral. Same for right.
+- **Up / down:** point the device a few degrees up and the camera keeps looking further up until you return to neutral. Same for down.
+
+A bigger angle turns faster, up to a cap. A small deadzone around neutral stops drift. A recenter action resets neutral to however the player is holding the device.
 
 ### Firing: push motion (phone)
 
@@ -62,7 +67,7 @@ A **push** of the phone (a short forward thrust, measured by the accelerometer) 
 
 - The game serves a small controller web page. Players scan a QR code (shown in-game) with their own phone, tap Start and allow motion access. No app install.
 - The page streams raw orientation (gyroscope) and acceleration readings to the game over a **websocket**, continuously.
-- iPhone only gives motion data to HTTPS pages, so the game is reached through an HTTPS tunnel (Cloudflare quick tunnel). This needs internet; use the laptop on the iPhone's Personal Hotspot if venue Wi-Fi is unreliable.
+- iPhone Safari only gives gyroscope/accelerometer data to **HTTPS** pages, and an HTTPS page can only open a secure websocket (`wss://`). So the page and its websocket need HTTPS. Options (undecided): an HTTPS tunnel such as a Cloudflare quick tunnel (no warnings, needs internet), or a self-signed certificate on local Wi-Fi (no internet, but each phone must tap through a "not private" warning).
 - Network and serial reading happen on background threads only and never call Unity APIs (see `CLAUDE.md`).
 
 ### Open questions
