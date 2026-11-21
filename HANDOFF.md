@@ -1,5 +1,28 @@
 # HANDOFF — QuickFlick
 
+## Session 2026-11-21 afternoon (Georgia): phone controller plan — Tom, action needed
+
+**Read `PHONE-CONTROLLER-PLAN.md`** (v3, decisions final). Summary for Tom:
+
+**What:** any iPhone becomes a wireless controller. Scan a QR → Safari controller page → tilt to aim (velocity, both axes), push the phone towards the screen to fire the **right cannon**. Keys **7 / 8 / 9** switch the game between mouse / Arduino / phone (one device at a time; failed switch = stay + brief message). Arduino firmware and serial format are **not** changed.
+
+**Why Cloudflare:** iPhone Safari only gives motion data to HTTPS pages. A Cloudflare Worker gives a free, fixed HTTPS URL, serves the page, and relays websockets. Both the phone and the game connect **out** to it, so no laptop server, no tunnel, no firewall prompt, no same-Wi-Fi requirement. Free plan is enough (~18 h of play per day; resets 11:00 Sydney).
+
+**Tom's part (you have the Cloudflare account):**
+1. Build `relay/` in this repo: `wrangler.jsonc`, `package.json`, `src/index.ts` (Worker + `Room` Durable Object, ~100 lines). Spec: plan **section 4 (contract)** and **section 6**. The relay only forwards text; it never parses.
+2. Free plan needs the SQLite Durable Object type: migration `new_sqlite_classes: ["Room"]`.
+3. Add `relay/node_modules/` and `relay/.wrangler/` to `.gitignore` (outside the env/secrets section).
+4. Deploy: `cd relay` → `npm install` → `npx wrangler login` → `npx wrangler deploy`. Share the `https://….workers.dev` URL with Georgia.
+5. Pick a room per laptop (name + random suffix, e.g. `tom-7f3kq`) and add to your repo-root `.env`: `PHONE_RELAY_URL=…` and `PHONE_ROOM=…`.
+
+**Georgia's part (in progress on `georgia/new-feature`):** all Unity code (RelayClient on a background thread, PhoneInput processing, InputSelector 7/8/9, F6 phone debug panel, QR PNG writer) **and** `relay/public/controller.html` (the page your Worker serves as a static asset). It lands as a **PR** because it touches `GameBootstrap.cs` (one line), `Settings.cs` (appended constants) and `.gitignore`.
+
+**Contract rule:** section 4 (URLs, roles, `kicked`, `#phone-connected` / `#phone-left`, the 2-samples-per-frame CSV) is shared by your relay, the page and Unity. Change it only together.
+
+**Heads-up (existing, not fixed):** F3 toggles `DebugOverlay` **and** spawns a Space Drone in `DebugSpawner`.
+
+---
+
 ## Session 2026-11-21 midday (enemy variety pass)
 
 Shipped: Octopus, Mario polish, Crab pivot fix. All on `main`, mouse-only flow still green.

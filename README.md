@@ -73,10 +73,12 @@ A **push** of the phone (a short forward thrust, measured by the accelerometer) 
 
 ### Phone controller
 
-- The game serves a small controller web page. Players scan a QR code (shown in-game) with their own phone, tap Start and allow motion access. No app install.
-- The page streams raw orientation (gyroscope) and acceleration readings to the game over a **websocket**, continuously.
-- iPhone Safari only gives gyroscope/accelerometer data to **HTTPS** pages, and an HTTPS page can only open a secure websocket (`wss://`). So the page and its websocket need HTTPS. **Decision: HTTPS tunnel** (Cloudflare quick tunnel). The game serves plain HTTP + websocket on localhost, and `cloudflared` gives it a public `https://` address that the in-game QR code points to. Phones scan and play with no security warning. Needs internet: if venue Wi-Fi is unreliable or blocks devices, put the laptop on the iPhone's Personal Hotspot. Rejected alternative: a self-signed certificate (works offline, but every phone must tap through a "not private" warning).
-- Network and serial reading happen on background threads only and never call Unity APIs (see `CLAUDE.md`).
+Full spec: **`PHONE-CONTROLLER-PLAN.md`**.
+
+- Players scan a QR code (a PNG the game writes to `QuickFlick/Tools/join-qr.png`, not shown in-game) with their own iPhone, tap Start and allow motion access. No app install. The phone fires the **right cannon** only.
+- The page streams raw orientation (gyroscope) and acceleration readings over a **websocket**, continuously (60 Hz, 2 samples per message).
+- iPhone Safari only gives motion data to **HTTPS** pages, and an HTTPS page can only open a secure websocket (`wss://`). **Decision: Cloudflare Worker relay** (free plan, fixed `*.workers.dev` URL, Tom's account). The Worker serves the page and relays websockets. The phone and the game both connect **out** to it, so the laptop runs no server, needs no tunnel, and the phone just needs any internet. Each laptop has its own **room** (`PHONE_ROOM` in the gitignored `.env`), so laptops never cross-talk. Rejected: a self-signed certificate (warning on every phone, same-Wi-Fi only) and a Cloudflare quick tunnel (URL changes every run).
+- Network reading happens on a background thread only and never calls Unity APIs (see `CLAUDE.md`). All processing (deadzone, velocity, push threshold) is in Unity.
 
 ### Arduino controller
 
@@ -94,6 +96,8 @@ Out of scope for the phone work: the Arduino firmware and its serial format are 
 | `CONTEXT.md` | Glossary |
 | `CLAUDE.md` | Agent workflow and project rules |
 | `HANDOFF.md` | Session notes, newest first |
+| `PHONE-CONTROLLER-PLAN.md` | Phone controller spec + relay contract |
+| `relay/` | Cloudflare Worker relay (planned, Tom) |
 | `ENEMY-COOKBOOK.md` | How to add an enemy (one file + one model) |
 | `FBX-IMPORT.md` | Loading converted models without the white-material bug |
 | `QuickFlick/Assets/Scripts/<area>/` | Code, one `CLAUDE.md` per area |
