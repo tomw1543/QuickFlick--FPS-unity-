@@ -64,7 +64,7 @@ namespace QuickFlick.Bootstrap
             new GameObject("EnemyPool").AddComponent<QuickFlick.Enemies.EnemyPool>();
             new GameObject("Spawner").AddComponent<QuickFlick.Systems.Spawner>();
 
-            foreach (var t in new[] { typeof(QuickFlick.Systems.GameState), typeof(QuickFlick.Systems.PlayerHp), typeof(QuickFlick.Systems.Score), typeof(QuickFlick.Systems.WaveManager) })
+            foreach (var t in new[] { typeof(QuickFlick.Systems.GameState), typeof(QuickFlick.Systems.PlayerHp), typeof(QuickFlick.Systems.Score), typeof(QuickFlick.Systems.PointLevel), typeof(QuickFlick.Systems.WaveManager), typeof(QuickFlick.Systems.MarioSpawner) })
             {
                 var go = new GameObject(t.Name);
                 go.transform.SetParent(transform, false);

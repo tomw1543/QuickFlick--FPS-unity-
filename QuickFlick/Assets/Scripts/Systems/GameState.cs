@@ -6,10 +6,12 @@ namespace QuickFlick.Systems
 {
     public class GameState : MonoBehaviour
     {
-        public enum State { Boot, Playing, GameOver }
+        public enum State { Boot, Menu, Playing, GameOver }
 
         public static GameState Instance;
-        public State Current { get; private set; } = State.Boot;
+        public State Current { get; private set; } = State.Menu; // Menu from first frame so WaveManager/Cannon never see a gap
+
+        public void StartPlaying() { if (Current == State.Menu) Current = State.Playing; }
 
         void Awake() => Instance = this;
         void OnEnable() => GameEvents.GameOver += OnGameOver;
@@ -17,8 +19,7 @@ namespace QuickFlick.Systems
 
         void Start()
         {
-            Current = State.Playing;
-            Time.timeScale = 1f;
+            Time.timeScale = 1f; // stays in Menu until MenuScreen calls StartPlaying
         }
 
         void OnGameOver()

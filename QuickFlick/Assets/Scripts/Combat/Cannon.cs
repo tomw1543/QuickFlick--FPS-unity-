@@ -20,13 +20,14 @@ namespace QuickFlick.Combat
         {
             bool rising = fireHeld && !prevHeld;
             prevHeld = fireHeld;
+            if (GameState.Instance != null && GameState.Instance.Current == GameState.State.Menu) return false;
             if (!rising || Time.time - lastFire < cooldownSeconds) return false;
 
             lastFire = Time.time;
             if (megaShotFlag) return true;
 
             var origin = muzzle.position + muzzle.TransformDirection(muzzleOffset);
-            ProjectilePool.Instance.Get().Launch(origin, muzzle.forward, Settings.CannonDamage);
+            ProjectilePool.Instance.Get().Launch(origin, muzzle.forward, Settings.CannonDamage, PointLevel.NextShotColor());
             GameEvents.RaiseShotFired(false);
             return true;
         }

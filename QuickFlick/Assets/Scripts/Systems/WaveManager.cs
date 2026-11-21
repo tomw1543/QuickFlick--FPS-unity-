@@ -36,6 +36,7 @@ namespace QuickFlick.Systems
         {
             for (int i = 0; ; i++)
             {
+                while (GameState.Instance != null && GameState.Instance.Current == GameState.State.Menu) yield return null;
                 yield return new WaitForSeconds(DelaySeconds);
                 var batch = Pattern[i % Pattern.Length];
                 int total = 0; foreach (var (_, c) in batch) total += c;

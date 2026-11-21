@@ -50,7 +50,7 @@ namespace QuickFlick.UI
             var frt = flashImage.rectTransform;
             frt.anchorMin = Vector2.zero; frt.anchorMax = Vector2.one; frt.offsetMin = frt.offsetMax = Vector2.zero;
 
-            foreach (var t in new[] { typeof(Reticle), typeof(HpPips), typeof(ScoreText), typeof(WaveBanner), typeof(DebugOverlay), typeof(OffScreenArrows) })
+            foreach (var t in new[] { typeof(Reticle), typeof(HpPips), typeof(ScoreText), typeof(WaveBanner), typeof(LevelUpBanner), typeof(MenuScreen), typeof(DebugOverlay), typeof(OffScreenArrows) })
             {
                 var go = new GameObject(t.Name, typeof(RectTransform));
                 go.transform.SetParent(transform, false);
@@ -95,6 +95,39 @@ namespace QuickFlick.UI
             tex.SetPixel(0, 0, Color.white);
             tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
+        }
+
+        // Chunky 16x16 pixel heart, drawn 2x to 32x32, white so Image.color tints it.
+        static readonly string[] HeartRows =
+        {
+            "................",
+            "..####....####..",
+            ".######..######.",
+            "################",
+            "################",
+            "################",
+            "################",
+            ".##############.",
+            "..############..",
+            "...##########...",
+            "....########....",
+            ".....######.....",
+            "......####......",
+            ".......##.......",
+            "................",
+            "................",
+        };
+        static Sprite heartSprite;
+
+        public static Sprite Heart()
+        {
+            if (heartSprite != null) return heartSprite;
+            var tex = new Texture2D(32, 32) { filterMode = FilterMode.Point };
+            for (int y = 0; y < 32; y++)
+                for (int x = 0; x < 32; x++)
+                    tex.SetPixel(x, y, HeartRows[15 - y / 2][x / 2] == '#' ? Color.white : Color.clear);
+            tex.Apply();
+            return heartSprite = Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
         }
 
         public static Sprite Ring(int size = 64, float thickness = 4f)

@@ -21,7 +21,13 @@ namespace QuickFlick.Systems
             GameEvents.Restart -= OnRestart;
         }
 
-        void OnKilled(Enemy e, bool wasMega) => Add(Settings.DroneKillPoints * (wasMega ? Settings.MegaShotKillMultiplier : 1), wasMega ? "mega kill" : "kill");
+        const int MarioBonus = 1000;
+
+        void OnKilled(Enemy e, bool wasMega)
+        {
+            Add(Settings.DroneKillPoints * (wasMega ? Settings.MegaShotKillMultiplier : 1), wasMega ? "mega kill" : "kill");
+            if (e is Mario) Add(MarioBonus, "Mario bonus"); // EnemyKilled only fires on player kills, not on reaching the player
+        }
         void OnWaveClear(int wave) => Add(Settings.WaveClearBonusPerWave * wave, $"wave {wave} bonus");
         void OnRestart() { Current = 0; Debug.Log("Score reset: 0"); GameEvents.RaiseScoreChanged(Current); }
 

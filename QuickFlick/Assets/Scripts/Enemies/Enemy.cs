@@ -22,13 +22,26 @@ namespace QuickFlick.Enemies
         }
 
         // Pool return without death event or side effects (e.g. no asteroid split). Override only if cleanup differs.
-        // Override to play on-death VFX, drop loot, or emit a death cry. Called BEFORE pool return,
-        // both when killed (Die) and when far-despawned (Despawn).
-        protected virtual void OnBeforeDespawn() { }
+        // Called BEFORE pool return, both when killed (killed=true, Die) and far-despawned (killed=false).
+        // Base spawns the debris burst on kill; overrides should call base.
+        protected virtual void OnBeforeDespawn(bool killed)
+        {
+            if (killed) Debris.Spawn(transform.position, BodyColor());
+        }
+
+        Color BodyColor()
+        {
+            var r = GetComponentInChildren<Renderer>();
+            if (r == null || r.sharedMaterial == null) return Color.white;
+            var m = r.sharedMaterial;
+            if (m.HasProperty("_BaseColor")) return m.GetColor("_BaseColor");
+            if (m.HasProperty("_Color")) return m.GetColor("_Color");
+            return Color.white;
+        }
 
         protected virtual void Despawn()
         {
-            OnBeforeDespawn();
+            OnBeforeDespawn(false);
             EnemyPool.Instance.Return(this);
         }
 
@@ -36,14 +49,14 @@ namespace QuickFlick.Enemies
         {
             if (hp <= 0) return false; // already dead this frame
             hp -= amount;
-            if (hp > 0) return false;
+            if (hp > 0) { Debris.Spawn(transform.position, BodyColor()); return false; }
             Die();
             return true;
         }
 
         protected virtual void Die()
         {
-            OnBeforeDespawn();
+            OnBeforeDespawn(true);
             OnDeath?.Invoke(this);
             Systems.GameEvents.RaiseEnemyDied(this);
             EnemyPool.Instance.Return(this);

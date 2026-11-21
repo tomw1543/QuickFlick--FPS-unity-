@@ -16,6 +16,7 @@ namespace QuickFlick.Systems
         public static event Action<bool> ShotFired;          // bool: MegaShot
         public static event Action HitLanded;                // projectile damaged an enemy, kill or not
         public static event Action<int> HpChanged;           // new player HP
+        public static event Action<int, Color> LevelUp;      // new level, its laser color
 
         public static void RaiseEnemyKilled(Enemy e, bool wasMega) => EnemyKilled?.Invoke(e, wasMega);
         public static void RaiseEnemyDied(Enemy e) => EnemyDied?.Invoke(e);
@@ -27,13 +28,14 @@ namespace QuickFlick.Systems
         public static void RaiseShotFired(bool isMega) => ShotFired?.Invoke(isMega);
         public static void RaiseHitLanded() => HitLanded?.Invoke();
         public static void RaiseHpChanged(int hp) => HpChanged?.Invoke(hp);
+        public static void RaiseLevelUp(int level, Color laserColor) => LevelUp?.Invoke(level, laserColor);
 
         // Also runs on play-mode entry, so handlers never leak across sessions when domain reload is off.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void Reset()
         {
             EnemyKilled = null; EnemyDied = null; WaveStart = null; WaveClear = null; GameOver = null; Restart = null;
-            ScoreChanged = null; HpChanged = null; ShotFired = null; HitLanded = null;
+            ScoreChanged = null; HpChanged = null; ShotFired = null; HitLanded = null; LevelUp = null;
         }
     }
 }
