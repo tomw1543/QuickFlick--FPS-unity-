@@ -135,13 +135,13 @@ namespace QuickFlick.Bootstrap
             planet.transform.position = new Vector3(-250f, 80f, 320f);
             planet.transform.localScale = Vector3.one * 40f;
             foreach (var c in planet.GetComponentsInChildren<Collider>()) Destroy(c);
-            FixImportedMaterials(planet, fallback: new Color(0.80f, 0.37f, 0.07f));
+            FixImportedMaterials(planet, fallback: new Color(0.80f, 0.37f, 0.07f), emissionStrength: 0.1f);
             Debug.Log($"Planet: loaded FBX prefab, children={planet.transform.childCount}");
         }
 
         // FBX-imported materials often ship with Standard shader or stale keywords; URP then renders them white.
         // Clone each material, force URP Lit, copy the colour from whichever property the old shader used.
-        internal static void FixImportedMaterials(GameObject root, Color fallback)
+        internal static void FixImportedMaterials(GameObject root, Color fallback, float emissionStrength = 0.4f)
         {
             var urpLit = Shader.Find("Universal Render Pipeline/Lit");
             if (urpLit == null) { Debug.LogWarning("FixImportedMaterials: URP Lit shader not found"); return; }
@@ -163,6 +163,9 @@ namespace QuickFlick.Bootstrap
                     m.SetColor("_BaseColor", c);
                     m.SetFloat("_Metallic", 0f);
                     m.SetFloat("_Smoothness", 0.3f);
+                    m.EnableKeyword("_EMISSION");
+                    m.SetColor("_EmissionColor", c * emissionStrength); // self-lit so dark enemies read against the starfield
+                    m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
                     mats[i] = m;
                     Debug.Log($"FixImportedMaterials: {r.name} slot {i} src-shader={src.shader.name} color={c}");
                 }

@@ -18,7 +18,7 @@ Any of these causes the "shader is right in the log, pixel is still white" ghost
 Defined in `QuickFlick/Assets/Scripts/Bootstrap/GameBootstrap.cs`. Static, callable from anywhere. Clones every material on the imported hierarchy to a fresh URP Lit with a known colour.
 
 ```csharp
-internal static void FixImportedMaterials(GameObject root, Color fallback)
+internal static void FixImportedMaterials(GameObject root, Color fallback, float emissionStrength = 0.4f)
 {
     var urpLit = Shader.Find("Universal Render Pipeline/Lit");
     if (urpLit == null) { Debug.LogWarning("FixImportedMaterials: URP Lit shader not found"); return; }
@@ -40,6 +40,9 @@ internal static void FixImportedMaterials(GameObject root, Color fallback)
             m.SetColor("_BaseColor", c);
             m.SetFloat("_Metallic", 0f);
             m.SetFloat("_Smoothness", 0.3f);
+            m.EnableKeyword("_EMISSION");
+            m.SetColor("_EmissionColor", c * emissionStrength); // self-lit so dark enemies read against the starfield
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             mats[i] = m;
         }
         r.sharedMaterials = mats;
@@ -59,7 +62,9 @@ void SpawnAsteroid(Vector3 position, float scale)
     go.transform.position = position;
     go.transform.localScale = Vector3.one * scale;
     foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c); // or keep, if hit detection uses them
-    FixImportedMaterials(go, fallback: new Color(0.45f, 0.42f, 0.38f)); // grey-brown rock
+    FixImportedMaterials(go, fallback: new Color(0.45f, 0.42f, 0.38f)); // grey-brown rock; default emission 0.4
+    // Distant background object (e.g. planet), dimmer emission:
+    // FixImportedMaterials(go, fallback: new Color(0.80f, 0.37f, 0.07f), emissionStrength: 0.1f);
 }
 ```
 
@@ -76,6 +81,7 @@ void SpawnAsteroid(Vector3 position, float scale)
 4. **Destroy child colliders** unless you need them for hits. FBX models ship with mesh colliders that hurt perf and interact oddly with triggers.
 5. **Never hand-edit the imported FBX materials in the Unity inspector.** `FixImportedMaterials` runs at runtime and clones materials anyway — editor edits get discarded. If you need a persistent custom look, bake it into the `fallback` colour or extend this method.
 6. **One-shot, never pooled.** `Instantiate` + `FixImportedMaterials` runs per spawn. If pooling enemies later, call `FixImportedMaterials` once on the pooled prefab, not per spawn.
+7. **Imported models self-emit at `base * emissionStrength`** for space readability. Enemies and other foreground props use the default 0.4. Background objects like the planet take a lower value (0.1) to avoid blowing out. Pass `emissionStrength: X` to override.
 
 ## Known gotchas
 
