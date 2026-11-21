@@ -28,7 +28,7 @@ Click the Game view first so it receives key presses.
 
 Add to the repo-root `.env` (gitignored): `PHONE_RELAY_URL=http://localhost:8787` and `PHONE_ROOM=dev-room` for the local relay, or Tom's `https://....workers.dev` URL plus a room (`a-z0-9-`, 3-40 chars).
 
-Local relay (not committed, `QuickFlick/Tools/dev-relay`): `npm install`, then `node relay-stub.mjs` and, to simulate a phone, `node fake-phone.mjs`.
+Local relay (`relay/dev`): `npm install`, then `node relay-stub.mjs` and, to simulate a phone, `node fake-phone.mjs`.
 
 On Play the game writes (and opens) the join QR at `QuickFlick/Tools/join-qr.png`. Scan it with an iPhone, tap Start, then press 9 in the game. F6 shows the debug panel.
 
