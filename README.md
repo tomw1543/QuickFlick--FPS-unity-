@@ -67,7 +67,7 @@ A **push** of the phone (a short forward thrust, measured by the accelerometer) 
 
 - The game serves a small controller web page. Players scan a QR code (shown in-game) with their own phone, tap Start and allow motion access. No app install.
 - The page streams raw orientation (gyroscope) and acceleration readings to the game over a **websocket**, continuously.
-- iPhone Safari only gives gyroscope/accelerometer data to **HTTPS** pages, and an HTTPS page can only open a secure websocket (`wss://`). So the page and its websocket need HTTPS. Options (undecided): an HTTPS tunnel such as a Cloudflare quick tunnel (no warnings, needs internet), or a self-signed certificate on local Wi-Fi (no internet, but each phone must tap through a "not private" warning).
+- iPhone Safari only gives gyroscope/accelerometer data to **HTTPS** pages, and an HTTPS page can only open a secure websocket (`wss://`). So the page and its websocket need HTTPS. **Decision: HTTPS tunnel** (Cloudflare quick tunnel). The game serves plain HTTP + websocket on localhost, and `cloudflared` gives it a public `https://` address that the in-game QR code points to. Phones scan and play with no security warning. Needs internet: if venue Wi-Fi is unreliable or blocks devices, put the laptop on the iPhone's Personal Hotspot. Rejected alternative: a self-signed certificate (works offline, but every phone must tap through a "not private" warning).
 - Network and serial reading happen on background threads only and never call Unity APIs (see `CLAUDE.md`).
 
 ### Open questions
