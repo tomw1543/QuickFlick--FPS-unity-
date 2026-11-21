@@ -20,6 +20,8 @@ Terms of art for this project. Keep this file free of implementation detail — 
 
 **Brute.** Future Enemy (not tonight). 4 HP, slow, returns fire.
 
-**Virtual tilt.** The mouse's offset from screen centre, interpreted as a Stick deflection. Used only by `MouseInput` as a stand-in for real analog Sticks. Replaced by raw stick values when the Arduino lands.
+**Virtual tilt.** The mouse's offset from screen centre, interpreted as a Stick deflection. `MouseInput` writes it into both Sticks; `SerialInput` does the same with the real accelerometer tilt.
+
+**Tilt vector.** `(ax, ay)` from the accelerometer, treated as a single Stick that drives both LeftStick and RightStick.
 
 **Controller.** The input device abstracted behind `IControllerInput`. Mouse tonight; Arduino tomorrow. Code never talks to a specific Controller — only to the interface.

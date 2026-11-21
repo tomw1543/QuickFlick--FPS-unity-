@@ -6,7 +6,7 @@ Device abstraction for all player input. Gameplay code never talks to `UnityEngi
 
 **Interface:** `IControllerInput { Vector2 LeftStick; Vector2 RightStick; bool LeftFire; bool RightFire; }`
 
-Tonight: `MouseInput` writes virtual-tilt offsets into both sticks (so `StickCombiner` sees them moving together → 100% speed). Tomorrow: `SerialInput` reads raw stick values on a background thread.
+`SerialInput` is the default when the Arduino is connected (MMA8452Q via the Uno sketch at `Firmware/Recon/Recon.ino`); it writes the tilt vector into both sticks and fires on a g-spike. `MouseInput` is the fallback and does the same with virtual tilt (so `StickCombiner` sees both sticks moving together → 100% speed).
 
 **Rule:** `StickCombiner` is pure (no `UnityEngine.*`). It stays testable in EditMode.
 
