@@ -22,8 +22,13 @@ namespace QuickFlick.Enemies
         }
 
         // Pool return without death event or side effects (e.g. no asteroid split). Override only if cleanup differs.
+        // Override to play on-death VFX, drop loot, or emit a death cry. Called BEFORE pool return,
+        // both when killed (Die) and when far-despawned (Despawn).
+        protected virtual void OnBeforeDespawn() { }
+
         protected virtual void Despawn()
         {
+            OnBeforeDespawn();
             EnemyPool.Instance.Return(this);
         }
 
@@ -38,6 +43,7 @@ namespace QuickFlick.Enemies
 
         protected virtual void Die()
         {
+            OnBeforeDespawn();
             OnDeath?.Invoke(this);
             Systems.GameEvents.RaiseEnemyDied(this);
             EnemyPool.Instance.Return(this);

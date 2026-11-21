@@ -19,13 +19,16 @@ namespace QuickFlick.Enemies
 
         void Awake() => Instance = this;
 
-        public T Get<T>() where T : Enemy
+        public T Get<T>() where T : Enemy => (T)GetByType(typeof(T));
+
+        // Non-generic entry for callers that only have a Type (e.g. DebugSpawner).
+        public Enemy GetByType(Type t)
         {
-            if (!free.TryGetValue(typeof(T), out var q)) free[typeof(T)] = q = new Queue<Enemy>();
-            var e = q.Count > 0 ? q.Dequeue() : Build<T>();
+            if (!free.TryGetValue(t, out var q)) free[t] = q = new Queue<Enemy>();
+            var e = q.Count > 0 ? q.Dequeue() : Build(t);
             e.gameObject.SetActive(true);
             active.Add(e);
-            return (T)e;
+            return e;
         }
 
         public void ReturnAll()
@@ -41,9 +44,9 @@ namespace QuickFlick.Enemies
             q.Enqueue(e);
         }
 
-        Enemy Build<T>() where T : Enemy
+        Enemy Build(Type t)
         {
-            var go = new GameObject(typeof(T).Name);
+            var go = new GameObject(t.Name);
             go.transform.SetParent(transform, false);
             // Only Drone exists; add a branch per new enemy type here.
             go.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
@@ -53,7 +56,7 @@ namespace QuickFlick.Enemies
             var rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = true; // kinematic body so trigger events fire
             rb.useGravity = false;
-            return go.AddComponent<T>();
+            return (Enemy)go.AddComponent(t);
         }
 
         static Material DroneMaterial()
