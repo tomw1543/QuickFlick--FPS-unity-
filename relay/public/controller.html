@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>QuickFlick Controller</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d12; color: #e8ecf4;
+    font-family: -apple-system, system-ui, sans-serif; touch-action: none; -webkit-user-select: none; user-select: none; }
+  body { display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; gap: 14px; }
+  #status { text-align: center; font-size: 20px; padding: 10px; border-radius: 10px; background: #1a1f2b; }
+  #status.ok { background: #14532d; } #status.err { background: #7f1d1d; } #status.warn { background: #78350f; }
+  button { flex: 1; border: 0; border-radius: 18px; font-size: 34px; font-weight: 700; color: #fff; touch-action: none; }
+  #start { background: #2563eb; } #recenter { background: #374151; } #recenter:active { background: #4b5563; }
+  #hint { text-align: center; font-size: 15px; color: #9aa4b8; line-height: 1.35; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="status">Tap Start</div>
+<button id="start">Start</button>
+<button id="recenter" class="hidden">Recenter</button>
+<div id="hint">Hold like a TV remote: screen up, top edge pointing at the game. Push towards the screen to fire.</div>
+<script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var startBtn = document.getElementById('start');
+  var recenterBtn = document.getElementById('recenter');
+  var room = new URLSearchParams(location.search).get('room');
+  var roomOk = room && /^[a-z0-9-]{3,40}$/.test(room);
+
+  function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls || ''; }
+
+  if (!roomOk) {
+    setStatus('Error: missing or invalid room in the link. Rescan the QR code.', 'err');
+    startBtn.disabled = true;
+    return;
+  }
+
+  var ws = null, kicked = false, started = false, retryMs = 500, retryTimer = null;
+  var seq = 0, recenter = 0;
+  var ori = { a: 0, b: 0, g: 0 };
+  var batch = [];
+  var wakeLock = null;
+
+  function connect() {
+    if (kicked) return;
+    setStatus(retryMs > 500 ? 'Reconnecting...' : 'Connecting...', 'warn');
+    var proto = location.protocol === 'http:' ? 'ws://' : 'wss://';
+    var sock;
+    try { sock = new WebSocket(proto + location.host + '/ws?room=' + room + '&role=phone'); }
+    catch (e) { setStatus('Error: ' + e.message, 'err'); scheduleRetry(); return; }
+    ws = sock;
+    sock.onopen = function () { retryMs = 500; setStatus('Connected', 'ok'); };
+    sock.onmessage = function (ev) {
+      if (ev.data === 'kicked') { kicked = true; setStatus('Another phone took over', 'err'); }
+    };
+    sock.onclose = function (ev) {
+      if (ws === sock) ws = null;
+      if (ev.code === 4000) kicked = true;
+      if (kicked) { setStatus('Another phone took over', 'err'); return; }
+      setStatus('Reconnecting...', 'warn');
+      scheduleRetry();
+    };
+    sock.onerror = function () { /* onclose follows */ };
+  }
+
+  function scheduleRetry() {
+    if (kicked || retryTimer) return;
+    retryTimer = setTimeout(function () { retryTimer = null; connect(); }, retryMs);
+    retryMs = Math.min(retryMs * 2, 5000);
+  }
+
+  function onOrientation(e) {
+    ori.a = e.alpha || 0; ori.b = e.beta || 0; ori.g = e.gamma || 0;
+  }
+
+  function onMotion(e) {
+    var acc = e.acceleration || {};
+    var ax = acc.x || 0, ay = acc.y || 0, az = acc.z || 0;
+    seq++;
+    batch.push([seq, ori.a.toFixed(3), ori.b.toFixed(3), ori.g.toFixed(3),
+      ax.toFixed(3), ay.toFixed(3), az.toFixed(3), recenter].join(','));
+    if (batch.length >= 2) {
+      var msg = batch.join(';');
+      batch = [];
+      if (ws && ws.readyState === 1) ws.send(msg);
+    }
+  }
+
+  async function requestWakeLock() {
+    try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (started && document.visibilityState === 'visible') requestWakeLock();
+  });
+
+  startBtn.addEventListener('click', async function () {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        var p1 = DeviceOrientationEvent.requestPermission();
+        var p2 = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function')
+          ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
+        var res = await Promise.all([p1, p2]);
+        var r1 = res[0], r2 = res[1];
+        if (r1 !== 'granted' || r2 !== 'granted') { setStatus('Error: motion access denied', 'err'); return; }
+      }
+    } catch (e) { setStatus('Error: ' + e.message, 'err'); return; }
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+    started = true;
+    startBtn.classList.add('hidden');
+    recenterBtn.classList.remove('hidden');
+    requestWakeLock();
+    connect();
+  });
+
+  recenterBtn.addEventListener('click', function () { recenter++; });
+})();
+</script>
+</body>
+</html>

@@ -49,19 +49,7 @@ namespace QuickFlick.Bootstrap
             BuildSun();
             BuildPlanet();
 
-            // SerialInput opens its port synchronously in OnEnable, so IsOpen is valid right after AddComponent.
-            var serial = gameObject.AddComponent<SerialInput>();
-            if (serial.IsOpen)
-            {
-                input = serial;
-                Debug.Log($"[Bootstrap] Input: Serial ({serial.PortName})");
-            }
-            else
-            {
-                Destroy(serial);
-                input = gameObject.AddComponent<MouseInput>();
-                Debug.Log("[Bootstrap] Input: Mouse (serial unavailable)");
-            }
+            input = gameObject.AddComponent<InputSelector>();
 
             turret = cam.GetComponent<TurretCamera>();
             if (turret == null) turret = cam.AddComponent<TurretCamera>();

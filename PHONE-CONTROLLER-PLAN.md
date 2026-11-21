@@ -112,7 +112,8 @@ seq,alpha,beta,gamma,ax,ay,az,recenter;seq,alpha,beta,gamma,ax,ay,az,recenter
 - Mapping is linear and starts **just above `StickCombiner`'s 0.15 deadzone** so small angles (3°) still turn.
 - Push → `RightFire = true` for a **0.1 s pulse** (same as `SerialInput.firePulseSeconds`; Cannon fires on the rising edge). `LeftFire` always false.
 - **Mirrors the Arduino controller** (`SerialInput`, `10eb082`): background thread → `ConcurrentQueue` → main thread drains every sample → deadzone + linear shaping into both sticks → spike threshold + cooldown → timed right-cannon pulse. Differences: the phone thresholds on linear acceleration along the top edge (gravity already removed by iOS) with hysteresis; the Arduino thresholds on the change in raw X g between samples.
-- Neutral = first sample after (re)connect, and on every `recenter` change.
+- Neutral = the first sample ever, the first sample after `#phone-connected`, and on every `recenter` change. **Not** after a silence: a >0.5 s gap only zeroes the sticks (a main-thread stall or alt-tab must not silently re-zero aim; a locked phone drops its socket, so it comes back via `#phone-connected` anyway).
+- **Replaced (4001):** if another game takes this room, the client stops reconnecting and shows "Replaced by another game in this room"; pressing 9 restarts it. Prevents two games kicking each other every 0.5 s.
 
 ## 6. Work split and files
 
@@ -135,15 +136,15 @@ S1 (pure + tests) and S2 (network + page) in parallel, then S3 (integration). Th
 |---|---|
 | **S1** pure, no `UnityEngine` | `Input/PhoneReading.cs`, `Input/PhoneProtocol.cs` (split `;`, parse CSV invariant culture, ignore `#…` control lines → separate result), `Input/PhoneAimMapper.cs`, `Input/PushDetector.cs`; tests in `Assets/Tests/EditMode/` (+ `QuickFlick.Tests.EditMode.asmdef`) |
 | **S2** network + page | `Net/RelayClient.cs` (ClientWebSocket on a background thread, connect at startup, backoff, bounded queue drop-oldest ~512, clean stop on quit + `beforeAssemblyReload`), `Net/EnvConfig.cs` (reads only `PHONE_RELAY_URL`, `PHONE_ROOM` from repo-root `.env`; never logs other keys), `Net/CLAUDE.md`, `relay/public/controller.html` |
-| **S3** integration | `Input/PhoneInput.cs`, `Input/InputSelector.cs` (7/8/9; owns Mouse/Serial/Phone components; startup default = Serial if `IsOpen` else Mouse, exactly as Tom's bootstrap does today; 8 = enable `SerialInput`, check `IsOpen`, else message + stay; inactive devices disabled — `SerialInput` closes its port in `OnDisable`, reopens in `OnEnable`), `UI/InputMessage.cs`, `UI/PhoneDebugPanel.cs` (F6), `Net/JoinQrWriter.cs` + vendored `Assets/Plugins/QrCodeGenerator/` (Net.Codecrete.QrCodeGenerator **v2.1.0**, MIT, 9 files + LICENSE; fully qualify its `Graphics` class), **replace the serial/mouse selection block** in `Bootstrap/GameBootstrap.cs` (lines ~52–64) with `input = gameObject.AddComponent<InputSelector>();`, **append** to `Systems/Settings.cs`, `.gitignore` add `QuickFlick/Tools/`, docs |
+| **S3** integration | `Input/PhoneInput.cs`, `Input/InputSelector.cs` (7/8/9; owns Mouse/Serial/Phone components; startup default = Serial if `IsOpen` else Mouse, exactly as Tom's bootstrap does today; 8 = enable `SerialInput`, check `IsOpen`, else message + stay; inactive devices disabled — `SerialInput` closes its port in `OnDisable`, reopens in `OnEnable`), `UI/InputMessage.cs`, `UI/PhoneDebugPanel.cs` (F6), `Net/JoinQrWriter.cs` + vendored `Assets/Scripts/ThirdParty/QrCodeGenerator/` (Net.Codecrete.QrCodeGenerator **v2.1.0**, MIT, 9 files + LICENSE; inside `QuickFlick.asmdef` because asmdef code can't reference the `Plugins/` firstpass assembly), **replace the serial/mouse selection block** in `Bootstrap/GameBootstrap.cs` (lines ~52–64) with `input = gameObject.AddComponent<InputSelector>();`, **append** to `Systems/Settings.cs`, `.gitignore` add `QuickFlick/Tools/`, docs |
 
 **Nobody touches:** `MouseInput.cs`, `SerialInput.cs`, `SerialProtocol.cs`, `Firmware/`, `StickCombiner.cs`, `TurretCamera.cs`, `Cannon.cs`, `MegaShotDetector.cs`, `DebugOverlay.cs`, enemies, `Main.unity`, `.meta`/prefab/asset files.
 
 ## 7. Acceptance criteria
 
 1. **Mouse unaffected:** no `.env` / no internet / relay down → game starts normally, one clear warning, mouse works, no frame stalls.
-2. **Switching:** startup default unchanged (Arduino if connected, else mouse); 7/8/9 work; 9 with no phone → stay + "No phone connected"; 8 with no Arduino → stay + "Arduino controller not available"; with the Arduino plugged in, 8 → 7 → 8 reopens the port cleanly.
-3. **QR:** `QuickFlick/Tools/join-qr.png` written + opened at startup; scanning opens the page for this laptop's room.
+2. **Switching:** startup default unchanged (Arduino if connected, else mouse); 7/8/9 work; 9 with no phone → stay + "No phone connected" (or "Phone not configured (.env)" when `.env` lacks the PHONE_* keys); 8 with no Arduino → stay + "Arduino controller not available"; with the Arduino plugged in, 8 → 7 → 8 reopens the port cleanly.
+3. **QR:** `QuickFlick/Tools/join-qr.png` written at every startup, opened in the image viewer only when the URL changed (first run / new room or relay); scanning opens the page for this laptop's room.
 4. **Phone flow:** scan → Start → allow → page "connected" → press 9 → aim + fire per section 1.
 5. **Velocity aim:** ~3° turns slowly and continuously; ~20° full speed; neutral stops; both axes.
 6. **Push fire:** a deliberate push fires the right cannon exactly once; still/slow moves never fire; aim doesn't jump.

@@ -23,6 +23,10 @@
 
 **Heads-up (existing, not fixed):** F3 toggles `DebugOverlay` **and** spawns a Space Drone in `DebugSpawner`.
 
+**Heads-up for your `SerialInput` (found in the Tier 3 review, not changed by us):** it keeps `_tilt` and `_prev` across disable/enable. With the new 7/8/9 switching, 8 → 7 → 8 can leave the camera turning on the old tilt until the first new sample, and the first new sample can register a false fire (delta vs the stale `_prev`). Suggested fix: clear `_tilt`, `_hasPrev` and the fire/cooldown timers in `OnEnable`.
+
+**Relay detail that matters:** the phone page treats close code **4000** as "another phone took over" (as well as the `kicked` text), and Unity treats **4001** as "replaced by another game" and stops reconnecting. Please send exactly those codes.
+
 ---
 
 ## Session 2026-11-21 midday (enemy variety pass)
