@@ -25,6 +25,21 @@ namespace QuickFlick.Systems
         public const float StickDeadzone = 0.15f;
         public const float CameraLookRateDegPerSec = 120f;
 
+        // Phone controller (PHONE-CONTROLLER-PLAN.md section 5)
+        public const float PhoneTimeoutSeconds = 0.5f;
+        public const float PhoneDeadzoneDeg = 1.5f;
+        public const float PhoneFullSpeedDeg = 20f;
+        public const float PhonePushThreshold = 15f;
+        public const float PhonePushRelease = 5f;
+        public const float PhonePushCooldownSeconds = 0.25f;
+        public const float PhoneAimFreezeSeconds = 0.15f;
+        public const float PhoneFirePulseSeconds = 0.1f;
+        public const float PhoneReconnectMaxSeconds = 10f;
+        public const float PhoneAimMinOut = StickDeadzone + 0.01f;
+        public const float InputSwitchMessageSeconds = 2f;
+        public const bool PhoneOpenQrOnStart = true;
+        public const int PhoneRelayQueueMax = 512;
+
         public readonly struct WaveDef
         {
             public readonly int Count;

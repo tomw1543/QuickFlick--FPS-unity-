@@ -27,15 +27,15 @@ namespace QuickFlick.Input
             var ci = CultureInfo.InvariantCulture;
             if (!int.TryParse(p[0].Trim(), NumberStyles.Integer, ci, out var seq) ||
                 !int.TryParse(p[7].Trim(), NumberStyles.Integer, ci, out var rec)) return false;
-            var f = new float[6];
-            for (int i = 0; i < 6; i++)
-            {
-                if (!float.TryParse(p[i + 1].Trim(), NumberStyles.Float, ci, out f[i]) ||
-                    float.IsNaN(f[i]) || float.IsInfinity(f[i])) return false;
-            }
-            r = new PhoneReading(seq, f[0], f[1], f[2], f[3], f[4], f[5], rec);
+            if (!TryF(p[1], out var a) || !TryF(p[2], out var b) || !TryF(p[3], out var g) ||
+                !TryF(p[4], out var ax) || !TryF(p[5], out var ay) || !TryF(p[6], out var az)) return false;
+            r = new PhoneReading(seq, a, b, g, ax, ay, az, rec);
             return true;
         }
+
+        static bool TryF(string s, out float f) =>
+            float.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out f) &&
+            !float.IsNaN(f) && !float.IsInfinity(f);
 
         public static int ParseSamples(string msg, List<PhoneReading> output)
         {

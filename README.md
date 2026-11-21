@@ -2,7 +2,7 @@
 
 Unity 6 (URP, C#) stationary FPS space shooter. You are a turret: you don't move, you look and shoot. Survive waves of enemies.
 
-Input devices: **mouse** (works), **Arduino controller** (works: Uno + MMA8452Q accelerometer, tilt to aim, X-flick fires the right cannon; used automatically when its serial port opens) and **phone controller** (planned). One device is active at a time; the mouse is always the no-hardware fallback.
+Input devices: **mouse** (works), **Arduino controller** (works: Uno + MMA8452Q accelerometer, tilt to aim, X-flick fires the right cannon; used automatically when its serial port opens) and **phone controller** (built; real-iPhone test waits for Tom's Cloudflare relay — see `PHONE-CONTROLLER-PLAN.md`). One device is active at a time; the mouse is always the no-hardware fallback.
 
 ## Run
 
@@ -19,8 +19,18 @@ Input devices: **mouse** (works), **Arduino controller** (works: Uno + MMA8452Q 
 | Space | Restart after game over |
 | P | Pause / resume the wave spawner (debug) |
 | F1–F5 | Debug-spawn Crab / Octopus / Space Drone / Asteroid / Mario |
+| 7 / 8 / 9 | Switch input: Mouse / Arduino controller / Phone |
+| F6 | Toggle phone debug panel |
 
 Click the Game view first so it receives key presses.
+
+## Phone controller (dev)
+
+Add to the repo-root `.env` (gitignored): `PHONE_RELAY_URL=http://localhost:8787` and `PHONE_ROOM=dev-room` for the local relay, or Tom's `https://....workers.dev` URL plus a room (`a-z0-9-`, 3-40 chars).
+
+Local relay (not committed, `QuickFlick/Tools/dev-relay`): `npm install`, then `node relay-stub.mjs` and, to simulate a phone, `node fake-phone.mjs`.
+
+On Play the game writes (and opens) the join QR at `QuickFlick/Tools/join-qr.png`. Scan it with an iPhone, tap Start, then press 9 in the game. F6 shows the debug panel.
 
 ## What's in the game
 

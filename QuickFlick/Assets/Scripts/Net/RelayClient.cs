@@ -22,9 +22,11 @@ namespace QuickFlick.Net
         ClientWebSocket _ws;
         volatile bool _connected;
         volatile string _lastError;
+        volatile bool _replaced;
 
         public bool IsConnected => _connected;
         public string LastError => _lastError;
+        public bool Replaced => _replaced;
 
         public RelayClient(string socketUrl, int maxQueue = 512, double reconnectMaxSeconds = 10)
         {
@@ -37,7 +39,9 @@ namespace QuickFlick.Net
         {
             lock (_lock)
             {
-                if (_thread != null) return;
+                if (_thread != null && _thread.IsAlive) return;
+                try { if (_cts != null) _cts.Dispose(); } catch (Exception) { }
+                _replaced = false;
                 _cts = new CancellationTokenSource();
                 var token = _cts.Token;
                 _thread = new Thread(() => Run(token)) { IsBackground = true, Name = "RelayClient" };
@@ -57,6 +61,7 @@ namespace QuickFlick.Net
             try { cts.Cancel(); } catch (Exception) { }
             try { if (ws != null) ws.Abort(); } catch (Exception) { }
             try { t.Join(1000); } catch (Exception) { }
+            try { cts.Dispose(); } catch (Exception) { }
             _connected = false;
         }
 
@@ -93,7 +98,7 @@ namespace QuickFlick.Net
                     try { if (ws != null) ws.Dispose(); } catch (Exception) { }
                 }
 
-                if (token.IsCancellationRequested) break;
+                if (token.IsCancellationRequested || _replaced) break;
                 try { token.WaitHandle.WaitOne(TimeSpan.FromSeconds(backoff)); } catch (Exception) { break; }
                 backoff = Math.Min(backoff * 2, _reconnectMax);
             }
@@ -102,18 +107,28 @@ namespace QuickFlick.Net
         void Receive(ClientWebSocket ws, byte[] buf, CancellationToken token)
         {
             var ms = new MemoryStream();
+            bool discarding = false;
             while (!token.IsCancellationRequested && ws.State == WebSocketState.Open)
             {
                 var r = ws.ReceiveAsync(new ArraySegment<byte>(buf), token).GetAwaiter().GetResult();
                 if (r.MessageType == WebSocketMessageType.Close)
                 {
-                    _lastError = "closed by relay (" + (int?)r.CloseStatus + ")";
+                    if ((int?)r.CloseStatus == 4001)
+                    {
+                        _lastError = "Replaced by another game in this room";
+                        _replaced = true;
+                    }
+                    else _lastError = "closed by relay (" + (int?)r.CloseStatus + ")";
                     return;
                 }
                 if (r.MessageType == WebSocketMessageType.Binary) { ms.SetLength(0); SkipBinary(ws, r, buf, token); continue; }
-                ms.Write(buf, 0, r.Count);
-                if (ms.Length > 65536) { ms.SetLength(0); continue; } // oversized; relay caps at 1 KB anyway
+                if (!discarding)
+                {
+                    ms.Write(buf, 0, r.Count);
+                    if (ms.Length > 65536) { discarding = true; ms.SetLength(0); } // oversized; relay caps at 1 KB anyway
+                }
                 if (!r.EndOfMessage) continue;
+                if (discarding) { discarding = false; continue; }
                 Enqueue(Encoding.UTF8.GetString(ms.GetBuffer(), 0, (int)ms.Length));
                 ms.SetLength(0);
             }

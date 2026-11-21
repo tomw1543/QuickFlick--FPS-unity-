@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Tilt Strike Controller</title>
+<title>QuickFlick Controller</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d12; color: #e8ecf4;
     font-family: -apple-system, system-ui, sans-serif; touch-action: none; -webkit-user-select: none; user-select: none; }
@@ -55,8 +55,9 @@
     sock.onmessage = function (ev) {
       if (ev.data === 'kicked') { kicked = true; setStatus('Another phone took over', 'err'); }
     };
-    sock.onclose = function () {
+    sock.onclose = function (ev) {
       if (ws === sock) ws = null;
+      if (ev.code === 4000) kicked = true;
       if (kicked) { setStatus('Another phone took over', 'err'); return; }
       setStatus('Reconnecting...', 'warn');
       scheduleRetry();
@@ -97,9 +98,11 @@
   startBtn.addEventListener('click', async function () {
     try {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        var r1 = await DeviceOrientationEvent.requestPermission();
-        var r2 = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function')
-          ? await DeviceMotionEvent.requestPermission() : 'granted';
+        var p1 = DeviceOrientationEvent.requestPermission();
+        var p2 = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function')
+          ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
+        var res = await Promise.all([p1, p2]);
+        var r1 = res[0], r2 = res[1];
         if (r1 !== 'granted' || r2 !== 'granted') { setStatus('Error: motion access denied', 'err'); return; }
       }
     } catch (e) { setStatus('Error: ' + e.message, 'err'); return; }
