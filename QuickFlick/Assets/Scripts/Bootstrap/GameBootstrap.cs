@@ -50,6 +50,7 @@ namespace QuickFlick.Bootstrap
             BuildPlanet();
 
             input = gameObject.AddComponent<MouseInput>();
+            gameObject.AddComponent<SerialSelfCheck>();
 
             turret = cam.GetComponent<TurretCamera>();
             if (turret == null) turret = cam.AddComponent<TurretCamera>();
