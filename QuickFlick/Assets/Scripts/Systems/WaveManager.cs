@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using QuickFlick.Enemies;
 using UnityEngine;
@@ -6,30 +7,28 @@ namespace QuickFlick.Systems
 {
     public class WaveManager : MonoBehaviour
     {
-        const float DelaySeconds = 5f; // pre-wave delay, doubles as the between-wave banner
+        const float DelaySeconds = 5f;    // pre-wave banner window
+        const float WaveSeconds = 30f;    // fixed wave length
 
-        Spawner spawner;
-
-        void OnEnable()
+        // 5-wave cycle; repeats forever.
+        static readonly (Type type, int count)[][] Pattern =
         {
-            GameEvents.Restart += OnRestart;
-        }
+            new[] { (typeof(Asteroid), 5) },
+            new[] { (typeof(Crab),     5) },
+            new[] { (typeof(Octopus),  5) },
+            new[] { (typeof(Asteroid), 5), (typeof(Crab),    3) },
+            new[] { (typeof(Asteroid), 5), (typeof(Octopus), 2) },
+        };
 
-        void OnDisable()
-        {
-            GameEvents.Restart -= OnRestart;
-        }
+        void OnEnable()  { GameEvents.Restart += OnRestart; }
+        void OnDisable() { GameEvents.Restart -= OnRestart; }
 
-        void Start()
-        {
-            spawner = FindFirstObjectByType<Spawner>();
-            StartCoroutine(Run());
-        }
+        void Start() => StartCoroutine(Run());
 
         void OnRestart()
         {
             StopAllCoroutines();
-            spawner.SpawnBatch(0);
+            if (EnemyPool.Instance != null) EnemyPool.Instance.ReturnAll();
             StartCoroutine(Run());
         }
 
@@ -38,29 +37,38 @@ namespace QuickFlick.Systems
             for (int i = 0; ; i++)
             {
                 yield return new WaitForSeconds(DelaySeconds);
-                var def = Def(i);
-                Debug.Log($"Wave {i + 1} START ({def.Count} drones, 1 per {def.SpawnInterval:0.00}s)");
+                var batch = Pattern[i % Pattern.Length];
+                int total = 0; foreach (var (_, c) in batch) total += c;
+                float interval = WaveSeconds / Mathf.Max(1, total);
+
+                Debug.Log($"Wave {i + 1} START ({total} enemies over {WaveSeconds}s)");
                 GameEvents.RaiseWaveStart(i + 1);
-                spawner.SetRate(def.SpawnInterval);
-                // Hold here while debug pause is on so teammates can test F1-F4 enemies in isolation.
                 while (DebugSpawner.WavesPaused) yield return null;
-                spawner.SpawnBatch(def.Count);
-                // Wait until the spawner finished AND the pool has no live enemies.
-                yield return new WaitForSeconds(def.Count * def.SpawnInterval);
-                yield return new WaitUntil(() => QuickFlick.Enemies.EnemyPool.Instance != null && QuickFlick.Enemies.EnemyPool.Instance.ActiveCount == 0);
+
+                var cam = UnityEngine.Camera.main;
+                float elapsed = 0f;
+                foreach (var (type, count) in batch)
+                {
+                    for (int k = 0; k < count; k++)
+                    {
+                        if (EnemyPool.Instance != null && cam != null)
+                        {
+                            float yaw = UnityEngine.Random.Range(0f, 360f);
+                            float pitch = UnityEngine.Random.Range(5f, 60f);
+                            var dir = Quaternion.Euler(-pitch, yaw, 0f) * Vector3.forward;
+                            var e = EnemyPool.Instance.GetByType(type);
+                            e.Reset(cam.transform.position + dir * Settings.SpawnRingRadius);
+                        }
+                        yield return new WaitForSeconds(interval);
+                        elapsed += interval;
+                    }
+                }
+                if (elapsed < WaveSeconds) yield return new WaitForSeconds(WaveSeconds - elapsed);
+                if (EnemyPool.Instance != null) EnemyPool.Instance.ReturnAll();
+
                 Debug.Log($"Wave {i + 1} CLEAR + bonus {Settings.WaveClearBonusPerWave * (i + 1)}");
                 GameEvents.RaiseWaveClear(i + 1);
             }
-        }
-
-        // Wave 4+: last table entry with +4 count and x0.9 interval per extra wave.
-        static Settings.WaveDef Def(int i)
-        {
-            var w = Settings.Waves;
-            if (i < w.Length) return w[i];
-            int extra = i - w.Length + 1;
-            var last = w[w.Length - 1];
-            return new Settings.WaveDef(last.Count + 4 * extra, last.SpawnInterval * Mathf.Pow(0.9f, extra));
         }
     }
 }
