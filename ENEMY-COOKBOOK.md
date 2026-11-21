@@ -213,6 +213,7 @@ Pool-friendly rules:
 - **Pool placeholder:** every pooled enemy has a tetrahedron `MeshRenderer` by default. Disable it in `AttachVisual` once the FBX loads (see Crab example).
 - **Scale + collider are in the table above.** Don't invent your own without discussing — it affects whether the player can hit you and whether you fit visually.
 - **Don't push broken code.** Press Play, confirm it works with your F-key, then commit.
+- **`Input.` namespace gotcha.** The project has a `QuickFlick.Input` namespace, which shadows `UnityEngine.Input`. If you need keyboard/mouse input in your enemy (you probably don't — enemies move by `Tick`), fully qualify as `UnityEngine.Input.GetKeyDown(...)`, never bare `Input.GetKeyDown`.
 
 ## Before you commit — checklist
 

@@ -16,10 +16,10 @@ namespace QuickFlick.Systems
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F1)) TrySpawn("Crab");
-            if (Input.GetKeyDown(KeyCode.F2)) TrySpawn("Octopus");
-            if (Input.GetKeyDown(KeyCode.F3)) TrySpawn("SpaceDrone");
-            if (Input.GetKeyDown(KeyCode.F4)) TrySpawn("Asteroid");
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F1)) TrySpawn("Crab");
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F2)) TrySpawn("Octopus");
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F3)) TrySpawn("SpaceDrone");
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F4)) TrySpawn("Asteroid");
         }
 
         static void TrySpawn(string typeName)
