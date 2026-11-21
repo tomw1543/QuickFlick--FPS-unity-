@@ -1,5 +1,31 @@
 # HANDOFF — QuickFlick
 
+## Session 2026-11-21 midday (enemy variety pass)
+
+Shipped: Octopus, Mario polish, Crab pivot fix. All on `main`, mouse-only flow still green.
+
+- **Crab** (`57f6fcc`): bounds-centroid re-center so the 3-axis tumble pivots on the mesh centre, not the FBX origin.
+- **Octopus** = Barbara the Bee (`65f9b33`): Y-billboard facing player, spirals inward on the player's Y plane. r=25 start, 2.0 u/s radial (~12s close), 6.0 u/s tangential. Scale 0.7, collider 2.2 (lasers were clipping through at 1.3). 6-colour yellow/purple palette cycled per material slot.
+- **Mario** (`6c74883`): 6-colour palette (red/blue/peach/yellow/brown/white) via new `LevelApproachEnemy.Palette` hook (default null → old solid-Colour behaviour; only Mario overrides). Loops `freesound_community-mariomp3-14599.mp3` via a local AudioSource on `OnEnable`, stops on `OnDisable` (pool deactivation covers death). Speed doubled to 3.0–8.0 u/s.
+- **Debug** (earlier same session): `DebugSpawner` `DontDestroyOnLoad` so F1–F5 survive bootstrap's scene cleanup. `P` toggles the wave spawner for isolated enemy testing (takes effect at next wave boundary).
+- **Audio** (Georgia, `30fd3b3`): crossfade to a new music track on wave 3.
+- **Materials** (`87e725d`): `FixImportedMaterials` gained optional `emissionStrength` param (default 0.4 for enemies). Planet call passes 0.1 so it doesn't dominate the skybox.
+
+### Risks to watch
+
+- **Multiple Marios = overlapping mario loops.** Each one owns its own AudioSource. Cap count or mute later spawners if it gets ugly.
+- **Octopus radial sign is critical.** Had a bug where `-n` pushed outward; now `+n`. If someone re-reads the code: `n` points at the player.
+- **Mario palette slot order is FBX-dependent.** If hat comes out blue, re-order `MarioPalette` in `Mario.cs`.
+- **Octopus at 6 u/s tangential + 2.2u collider** can streak past the reticle. Dial back if hit rate feels unfair.
+- **`.meta` for the new mario mp3** was committed with the mp3. If LFS is ever added, re-check that pair.
+
+### Open from yesterday (still open)
+
+- Sun/Planet white-render bug — untouched today.
+- Serial / Arduino integration — plan laid out in the old session below, not started.
+
+---
+
 Hand-off from 2026-11-21 late-night session. Read this first tomorrow.
 
 ## State of play
