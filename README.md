@@ -41,6 +41,14 @@ The player has **one cannon**, not two. The two-cannon design and MegaShot (both
 
 Only one device drives the game at once: mouse, Arduino controller or phone. They are not merged. Every device implements the same `IControllerInput`, so gameplay code never knows which one is active.
 
+Switch the active device with a key (number row):
+
+| Key | Device |
+|---|---|
+| 7 | Mouse (default) |
+| 8 | Arduino controller |
+| 9 | Phone |
+
 ### Shared processing in Unity
 
 Devices send **raw readings**. Unity does all the processing (deadzones, turn-speed mapping, fire thresholds) in the same place for every device, with tunables in `Settings`. The phone page and the Arduino firmware stay simple sensors and senders.
@@ -70,10 +78,12 @@ A **push** of the phone (a short forward thrust, measured by the accelerometer) 
 - iPhone Safari only gives gyroscope/accelerometer data to **HTTPS** pages, and an HTTPS page can only open a secure websocket (`wss://`). So the page and its websocket need HTTPS. **Decision: HTTPS tunnel** (Cloudflare quick tunnel). The game serves plain HTTP + websocket on localhost, and `cloudflared` gives it a public `https://` address that the in-game QR code points to. Phones scan and play with no security warning. Needs internet: if venue Wi-Fi is unreliable or blocks devices, put the laptop on the iPhone's Personal Hotspot. Rejected alternative: a self-signed certificate (works offline, but every phone must tap through a "not private" warning).
 - Network and serial reading happen on background threads only and never call Unity APIs (see `CLAUDE.md`).
 
+### Arduino controller
+
+Out of scope for the phone work: the Arduino firmware and its serial format are not changed by this plan.
+
 ### Open questions
 
-- How the active device is chosen (e.g. the most recently connected device takes over, or a key to switch).
-- The Arduino controller's final hardware and fire input (buttons vs. a threshold), and how its line format changes for one cannon.
 - Exact tuning: deadzone, full-speed angle, push threshold and cooldown.
 
 ## Where things are
