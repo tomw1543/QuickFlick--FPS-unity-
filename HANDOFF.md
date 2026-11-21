@@ -17,6 +17,8 @@
 
 **Georgia's part (in progress on `georgia/new-feature`):** all Unity code (RelayClient on a background thread, PhoneInput processing, InputSelector 7/8/9, F6 phone debug panel, QR PNG writer) **and** `relay/public/controller.html` (the page your Worker serves as a static asset). It lands as a **PR** because it touches `GameBootstrap.cs` (one line), `Settings.cs` (appended constants) and `.gitignore`.
 
+**Fits your SerialInput (`10eb082`):** the phone side copies its pattern (background queue → main-thread drain of every sample → deadzone/linear shaping into both sticks → threshold + cooldown → 0.1 s right-cannon pulse). The 7/8/9 `InputSelector` replaces your serial/mouse block in `GameBootstrap` but keeps your startup default (Arduino if the port opens, else mouse); 8 re-enables `SerialInput`. `SerialInput.cs`, `SerialProtocol.cs` and `Firmware/` are not touched.
+
 **Contract rule:** section 4 (URLs, roles, `kicked`, `#phone-connected` / `#phone-left`, the 2-samples-per-frame CSV) is shared by your relay, the page and Unity. Change it only together.
 
 **Heads-up (existing, not fixed):** F3 toggles `DebugOverlay` **and** spawns a Space Drone in `DebugSpawner`.

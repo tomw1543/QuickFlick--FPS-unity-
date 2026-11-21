@@ -2,7 +2,7 @@
 
 Unity 6 (URP, C#) stationary FPS space shooter. You are a turret: you don't move, you look and shoot. Survive waves of enemies.
 
-Input devices: **mouse** (works now), **Arduino controller** (planned) and **phone controller** (planned). One device is active at a time; the mouse is always the no-hardware fallback.
+Input devices: **mouse** (works), **Arduino controller** (works: Uno + MMA8452Q accelerometer, tilt to aim, X-flick fires the right cannon; used automatically when its serial port opens) and **phone controller** (planned). One device is active at a time; the mouse is always the no-hardware fallback.
 
 ## Run
 

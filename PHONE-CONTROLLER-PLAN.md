@@ -1,6 +1,6 @@
 # PHONE-CONTROLLER-PLAN.md — phone as a wireless controller
 
-**Tier 3** (network threading). Status: **v3 — decisions final (grilled 2026-11-21), awaiting build**. Branch: `georgia/new-feature`.
+**Tier 3** (network threading). Status: **v3.1 — decisions final (grilled 2026-11-21), aligned with Tom's `SerialInput` (`10eb082`), awaiting build**. Branch: `georgia/new-feature`.
 
 **Ownership:** **Tom** builds + deploys the Cloudflare relay (he has the Cloudflare account). **Georgia** builds the Unity side + the phone page. Section 4 is the contract between them — change it only by agreement.
 
@@ -16,7 +16,7 @@
 6. **Fire:** a sharp **push** of the phone towards the screen fires the **right cannon** only. No MegaShot from the phone.
 7. **Recenter:** button on the phone page. Switching to 9 does **not** auto-recenter.
 
-**Input switching: 7 = mouse (default), 8 = Arduino controller, 9 = phone.** If a switch fails (no phone connected, no Arduino code yet), stay on the current input and show a brief on-screen message (~2 s). If the phone drops while active, stay on phone (neutral) while it reconnects; keys still switch.
+**Input switching: 7 = mouse, 8 = Arduino controller (Tom's `SerialInput`), 9 = phone.** Startup default stays as Tom wired it in `GameBootstrap` (`10eb082`): **Arduino if its serial port opens, otherwise mouse**. If a switch fails (no phone connected, serial port won't open), stay on the current input and show a brief on-screen message (~2 s). If the phone drops while active, stay on phone (neutral) while it reconnects; keys still switch.
 
 ## 2. Architecture
 
@@ -110,7 +110,8 @@ seq,alpha,beta,gamma,ax,ay,az,recenter;seq,alpha,beta,gamma,ax,ay,az,recenter
 
 - Yaw stick = mapped `wrap(alpha − alpha0)` (±180, sign flipped so left = left). Pitch stick = mapped `beta − beta0`. Both sticks get the same value.
 - Mapping is linear and starts **just above `StickCombiner`'s 0.15 deadzone** so small angles (3°) still turn.
-- Push → `RightFire = true` for one frame (Cannon fires on the rising edge). `LeftFire` always false.
+- Push → `RightFire = true` for a **0.1 s pulse** (same as `SerialInput.firePulseSeconds`; Cannon fires on the rising edge). `LeftFire` always false.
+- **Mirrors the Arduino controller** (`SerialInput`, `10eb082`): background thread → `ConcurrentQueue` → main thread drains every sample → deadzone + linear shaping into both sticks → spike threshold + cooldown → timed right-cannon pulse. Differences: the phone thresholds on linear acceleration along the top edge (gravity already removed by iOS) with hysteresis; the Arduino thresholds on the change in raw X g between samples.
 - Neutral = first sample after (re)connect, and on every `recenter` change.
 
 ## 6. Work split and files
@@ -134,14 +135,14 @@ S1 (pure + tests) and S2 (network + page) in parallel, then S3 (integration). Th
 |---|---|
 | **S1** pure, no `UnityEngine` | `Input/PhoneReading.cs`, `Input/PhoneProtocol.cs` (split `;`, parse CSV invariant culture, ignore `#…` control lines → separate result), `Input/PhoneAimMapper.cs`, `Input/PushDetector.cs`; tests in `Assets/Tests/EditMode/` (+ `QuickFlick.Tests.EditMode.asmdef`) |
 | **S2** network + page | `Net/RelayClient.cs` (ClientWebSocket on a background thread, connect at startup, backoff, bounded queue drop-oldest ~512, clean stop on quit + `beforeAssemblyReload`), `Net/EnvConfig.cs` (reads only `PHONE_RELAY_URL`, `PHONE_ROOM` from repo-root `.env`; never logs other keys), `Net/CLAUDE.md`, `relay/public/controller.html` |
-| **S3** integration | `Input/PhoneInput.cs`, `Input/InputSelector.cs` (7/8/9), `UI/InputMessage.cs`, `UI/PhoneDebugPanel.cs` (F6), `Net/JoinQrWriter.cs` + vendored `Assets/Plugins/QrCodeGenerator/` (Net.Codecrete.QrCodeGenerator **v2.1.0**, MIT, 9 files + LICENSE; fully qualify its `Graphics` class), **one line** in `Bootstrap/GameBootstrap.cs:52`, **append** to `Systems/Settings.cs`, `.gitignore` add `QuickFlick/Tools/`, docs |
+| **S3** integration | `Input/PhoneInput.cs`, `Input/InputSelector.cs` (7/8/9; owns Mouse/Serial/Phone components; startup default = Serial if `IsOpen` else Mouse, exactly as Tom's bootstrap does today; 8 = enable `SerialInput`, check `IsOpen`, else message + stay; inactive devices disabled — `SerialInput` closes its port in `OnDisable`, reopens in `OnEnable`), `UI/InputMessage.cs`, `UI/PhoneDebugPanel.cs` (F6), `Net/JoinQrWriter.cs` + vendored `Assets/Plugins/QrCodeGenerator/` (Net.Codecrete.QrCodeGenerator **v2.1.0**, MIT, 9 files + LICENSE; fully qualify its `Graphics` class), **replace the serial/mouse selection block** in `Bootstrap/GameBootstrap.cs` (lines ~52–64) with `input = gameObject.AddComponent<InputSelector>();`, **append** to `Systems/Settings.cs`, `.gitignore` add `QuickFlick/Tools/`, docs |
 
-**Nobody touches:** `MouseInput.cs`, `StickCombiner.cs`, `TurretCamera.cs`, `Cannon.cs`, `MegaShotDetector.cs`, `DebugOverlay.cs`, enemies, `Main.unity`, `.meta`/prefab/asset files.
+**Nobody touches:** `MouseInput.cs`, `SerialInput.cs`, `SerialProtocol.cs`, `Firmware/`, `StickCombiner.cs`, `TurretCamera.cs`, `Cannon.cs`, `MegaShotDetector.cs`, `DebugOverlay.cs`, enemies, `Main.unity`, `.meta`/prefab/asset files.
 
 ## 7. Acceptance criteria
 
 1. **Mouse unaffected:** no `.env` / no internet / relay down → game starts normally, one clear warning, mouse works, no frame stalls.
-2. **Switching:** 7/8/9 work; 9 with no phone → stay + "No phone connected"; 8 → stay + "Arduino controller not available".
+2. **Switching:** startup default unchanged (Arduino if connected, else mouse); 7/8/9 work; 9 with no phone → stay + "No phone connected"; 8 with no Arduino → stay + "Arduino controller not available"; with the Arduino plugged in, 8 → 7 → 8 reopens the port cleanly.
 3. **QR:** `QuickFlick/Tools/join-qr.png` written + opened at startup; scanning opens the page for this laptop's room.
 4. **Phone flow:** scan → Start → allow → page "connected" → press 9 → aim + fire per section 1.
 5. **Velocity aim:** ~3° turns slowly and continuously; ~20° full speed; neutral stops; both axes.
