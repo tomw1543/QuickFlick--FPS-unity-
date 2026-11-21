@@ -20,6 +20,7 @@ namespace QuickFlick.Enemies
         protected abstract float ModelYawOffset { get; }   // degrees, so the mesh front faces the player
         protected virtual float ModelTiltX { get; } = 0f;  // degrees about X, to stand up a model imported lying down
         protected abstract Color Colour { get; }
+        protected virtual Color[] Palette => null; // if non-null, cycles per material slot instead of a solid Colour
 
         Transform player;
         float speed;
@@ -84,14 +85,17 @@ namespace QuickFlick.Enemies
             foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
             QuickFlick.Bootstrap.GameBootstrap.FixImportedMaterials(go, Colour);
 
-            // Force a solid colour: FixImportedMaterials keeps the source material's own colour.
+            // Force colour per material slot: solid Colour, or cycle Palette when provided.
+            var pal = Palette;
+            int pi = 0;
             foreach (var r in go.GetComponentsInChildren<Renderer>())
                 foreach (var m in r.sharedMaterials)
                 {
                     if (m == null) continue;
-                    m.SetColor("_BaseColor", Colour);
+                    var tint = pal != null && pal.Length > 0 ? pal[pi++ % pal.Length] : Colour;
+                    m.SetColor("_BaseColor", tint);
                     m.SetTexture("_BaseMap", null);
-                    m.SetColor("_EmissionColor", Colour * SolidEmission);
+                    m.SetColor("_EmissionColor", tint * SolidEmission);
                 }
 
             // Centre the model on the root so the hit sphere sits on the body (model pivot is not centred).
