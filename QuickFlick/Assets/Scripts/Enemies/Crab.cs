@@ -35,8 +35,8 @@ namespace QuickFlick.Enemies
             transform.localScale = Vector3.one * Scale;
             var sc = GetComponent<SphereCollider>();
             if (sc != null) sc.radius = ColliderRadius;
+            gameObject.SetActive(true); // Renderer.bounds is unreliable on inactive objects, so activate before centering.
             AttachVisual();
-            gameObject.SetActive(true);
         }
 
         public override void Tick(float dt)
